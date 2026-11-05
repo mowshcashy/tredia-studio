@@ -54,7 +54,7 @@ bool GetDataFilePath(const char *data, string &output)
 		return true;
 	}
 
-	return check_path(data, OBS_DATA_PATH "/tredia-studio/", output);
+	return check_path(data, OBS_DATA_PATH "/obs-studio/", output);
 }
 
 string GetDefaultVideoSavePath()

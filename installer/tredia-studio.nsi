@@ -43,7 +43,7 @@ Section "Tredia Studio" SecMain
   ; Replace an older install cleanly (settings live in %APPDATA%\tredia-studio and are kept).
   RMDir /r "$INSTDIR\bin"
   RMDir /r "$INSTDIR\data"
-  RMDir /r "$INSTDIR\obs-plugins"
+  RMDir /r "$INSTDIR\core"
   SetOutPath "$INSTDIR"
   File /r "${SRCDIR}\*.*"
   File "${ROOT}\COPYING"
