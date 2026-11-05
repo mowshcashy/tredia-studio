@@ -58,6 +58,7 @@
 #include <qt-wrappers.hpp>
 
 #include <QActionGroup>
+#include <QLabel>
 #include <QThread>
 #include <QWidgetAction>
 
@@ -386,6 +387,16 @@ OBSBasic::OBSBasic(QWidget *parent) : OBSMainWindow(parent), undo_s(ui), ui(new 
 #ifndef ENABLE_IDIAN_PLAYGROUND
 	ui->idianPlayground->setVisible(false);
 #endif
+
+	/* Tredia Studio: the logo at the start of the menu bar. */
+	{
+		QLabel *brand = new QLabel(ui->menubar);
+		brand->setObjectName("trediaBrand");
+		brand->setPixmap(QIcon(":/res/images/obs.png").pixmap(QSize(22, 22), devicePixelRatioF()));
+		brand->setContentsMargins(12, 0, 8, 0);
+		brand->setToolTip("Tredia Studio");
+		ui->menubar->setCornerWidget(brand, Qt::TopLeftCorner);
+	}
 
 	auto addNudge = [this](const QKeySequence &seq, MoveDir direction, int distance) {
 		QAction *nudge = new QAction(ui->preview);
@@ -1987,21 +1998,14 @@ void OBSBasic::UpdateTitleBar()
 {
 	stringstream name;
 
-	const char *profile = config_get_string(App()->GetUserConfig(), "Basic", "Profile");
-	const char *sceneCollection = config_get_string(App()->GetUserConfig(), "Basic", "SceneCollection");
-
-	name << "Tredia Studio ";
-
-	name << App()->GetVersionString(false);
+	/* Tredia Studio: just the app's name. No OBS version, profile or scene collection in the title. */
+	name << "Tredia Studio";
 	if (safe_mode) {
 		name << " (" << Str("TitleBar.SafeMode") << ")";
 	}
 	if (App()->IsPortableMode()) {
 		name << " - " << Str("TitleBar.PortableMode");
 	}
-
-	name << " - " << Str("TitleBar.Profile") << ": " << profile;
-	name << " - " << Str("TitleBar.Scenes") << ": " << sceneCollection;
 
 	setWindowTitle(QT_UTF8(name.str().c_str()));
 }

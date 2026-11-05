@@ -33,6 +33,16 @@ jobs:
           submodules: recursive
           fetch-depth: 0
 
+      - name: Fetch the brand font (IBM Plex Sans Arabic, SIL Open Font License 1.1)
+        run: |
+          $Fonts = Join-Path "${{ github.workspace }}" "frontend/data/fonts"
+          New-Item -ItemType Directory -Force -Path $Fonts | Out-Null
+          $Base = "https://raw.githubusercontent.com/google/fonts/main/ofl/ibmplexsansarabic"
+          foreach ($File in @("IBMPlexSansArabic-Regular.ttf", "IBMPlexSansArabic-Medium.ttf", "IBMPlexSansArabic-SemiBold.ttf", "IBMPlexSansArabic-Bold.ttf", "OFL.txt")) {
+            Invoke-WebRequest -Uri "$Base/$File" -OutFile (Join-Path $Fonts $File)
+          }
+          Get-ChildItem $Fonts | Format-Table Name, Length
+
       - name: Build Tredia Studio
         uses: ./.github/actions/build-obs
         with:

@@ -12,6 +12,7 @@
 
 class QButtonGroup;
 class QCheckBox;
+class QFrame;
 class QLabel;
 class QLineEdit;
 class QProgressBar;
@@ -42,11 +43,14 @@ private:
 	QLabel *signInError;
 	QString verifyUrl;
 	/* signed in */
+	QLabel *avatarLabel;
 	QLabel *helloLabel;
 	QLabel *planLabel;
 	QLabel *updateLabel;
 	QRadioButton *turboRadio;
 	QRadioButton *localRadio;
+	QFrame *turboCard;
+	QFrame *localCard;
 	QWidget *turboPanel;
 	QWidget *localPanel;
 	QVBoxLayout *destinationsBox;

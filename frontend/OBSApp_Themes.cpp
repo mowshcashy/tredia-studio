@@ -29,6 +29,7 @@
 #include <QDirIterator>
 #include <QFile>
 #include <QFileSystemWatcher>
+#include <QFontDatabase>
 #include <QMetaEnum>
 #include <QRandomGenerator>
 #include <QSet>
@@ -1048,6 +1049,19 @@ static map<string, string> themeMigrations = {
 bool OBSApp::InitTheme()
 {
 	defaultPalette = palette();
+
+	/* Tredia Studio: register the brand font (IBM Plex Sans Arabic) shipped in data/obs-studio/fonts,
+	 * so the theme can use it without it being installed on the PC. */
+	std::string fontDir;
+	if (GetDataFilePath("fonts", fontDir)) {
+		QDirIterator fonts(QString::fromStdString(fontDir), {"*.ttf", "*.otf"}, QDir::Files);
+		while (fonts.hasNext()) {
+			const QString file = fonts.next();
+			if (QFontDatabase::addApplicationFont(file) < 0) {
+				blog(LOG_WARNING, "Could not load font %s", QT_TO_UTF8(file));
+			}
+		}
+	}
 #if !defined(_WIN32) && !defined(__APPLE__)
 	setStyle(new OBSProxyStyle("Fusion"));
 #elif defined(_WIN32)

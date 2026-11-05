@@ -6,8 +6,13 @@
 #include <util/platform.h>
 
 #include <algorithm>
+#include <functional>
 
 #include <QButtonGroup>
+#include <QEvent>
+#include <QIcon>
+#include <QMouseEvent>
+#include <QStyle>
 #include <QCheckBox>
 #include <QDesktopServices>
 #include <QDialog>
@@ -63,9 +68,67 @@ QFrame *card(QWidget *parent = nullptr)
 {
 	auto *frame = new QFrame(parent);
 	frame->setObjectName("trediaCard");
-	frame->setFrameShape(QFrame::StyledPanel);
 	return frame;
 }
+
+QLabel *heading(const QString &text)
+{
+	auto *label = new QLabel(text);
+	label->setObjectName("trediaHeading");
+	return label;
+}
+
+/* The theme draws a "selected" card with the accent border. */
+void setSelected(QWidget *w, bool on)
+{
+	if (w->property("selected").toBool() == on)
+		return;
+	w->setProperty("selected", on);
+	w->style()->unpolish(w);
+	w->style()->polish(w);
+}
+
+QString initials(const QString &name)
+{
+	QString out;
+	for (const QString &part : name.split(' ', Qt::SkipEmptyParts)) {
+		out += part.at(0).toUpper();
+		if (out.size() == 2)
+			break;
+	}
+	return out.isEmpty() ? QStringLiteral("T") : out;
+}
+
+QString platformColor(const QString &p)
+{
+	if (p == QStringLiteral("youtube"))
+		return QStringLiteral("#FF0033");
+	if (p == QStringLiteral("twitch"))
+		return QStringLiteral("#9146FF");
+	if (p == QStringLiteral("kick"))
+		return QStringLiteral("#53FC18");
+	if (p == QStringLiteral("tiktok"))
+		return QStringLiteral("#25F4EE");
+	return QStringLiteral("#A597BF");
+}
+
+/* Clicking anywhere on a card (not only on its radio button or checkbox) runs `fn`. */
+class CardClick : public QObject {
+public:
+	CardClick(QObject *parent, std::function<void()> fn) : QObject(parent), fn(std::move(fn)) {}
+
+protected:
+	bool eventFilter(QObject *watched, QEvent *event) override
+	{
+		if (event->type() == QEvent::MouseButtonPress &&
+		    static_cast<QMouseEvent *>(event)->button() == Qt::LeftButton)
+			fn();
+		return QObject::eventFilter(watched, event);
+	}
+
+private:
+	std::function<void()> fn;
+};
 
 void openUrl(const QString &url)
 {
@@ -102,13 +165,16 @@ QString targetStatus(const QString &s)
 TrediaDock::TrediaDock(QWidget *parent) : QWidget(parent), api(new TrediaApi(this)), multi(new MultiOutput(this))
 {
 	setObjectName("trediaDock");
-	setMinimumWidth(280);
+	/* A plain QWidget only paints the theme's background with this set. */
+	setAttribute(Qt::WA_StyledBackground, true);
+	setMinimumWidth(300);
 
 	auto *outer = new QVBoxLayout(this);
 	outer->setContentsMargins(0, 0, 0, 0);
 	auto *scroll = new QScrollArea(this);
 	scroll->setWidgetResizable(true);
 	scroll->setFrameShape(QFrame::NoFrame);
+	scroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 	outer->addWidget(scroll);
 
 	pages = new QStackedWidget;
@@ -154,14 +220,19 @@ TrediaDock::TrediaDock(QWidget *parent) : QWidget(parent), api(new TrediaApi(thi
 void TrediaDock::buildSignedOut(QWidget *page)
 {
 	auto *layout = new QVBoxLayout(page);
-	layout->setContentsMargins(12, 12, 12, 12);
-	layout->setSpacing(10);
+	layout->setContentsMargins(14, 16, 14, 14);
+	layout->setSpacing(12);
+
+	auto *logo = new QLabel;
+	logo->setPixmap(QIcon(QStringLiteral(":/res/images/obs.png")).pixmap(QSize(48, 48), devicePixelRatioF()));
+	layout->addWidget(logo);
 
 	auto *title = new QLabel(QStringLiteral("اربط حسابك في تريديا"));
 	title->setObjectName("trediaTitle");
 	layout->addWidget(title);
 	layout->addWidget(wrapLabel(QStringLiteral(
-		"عشان تبث على يوتيوب وتويتش وكيك وتيك توك بضغطة وحدة (تيربو)، وتشوف تقرير بثك، وترفع تسجيلاتك لمكتبتك.")));
+		"عشان تبث على يوتيوب وتويتش وكيك وتيك توك بضغطة وحدة (تيربو)، وتشوف تقرير بثك، وترفع تسجيلاتك لمكتبتك."),
+		"trediaMuted"));
 
 	signInButton = new QPushButton(QStringLiteral("سجّل دخولك"));
 	signInButton->setObjectName("trediaPrimary");
@@ -173,6 +244,8 @@ void TrediaDock::buildSignedOut(QWidget *page)
 
 	codeBox = card();
 	auto *codeLayout = new QVBoxLayout(codeBox);
+	codeLayout->setContentsMargins(14, 14, 14, 14);
+	codeLayout->setSpacing(10);
 	codeLayout->addWidget(wrapLabel(QStringLiteral("فتحنا لك صفحة في المتصفح. تأكد إن الرمز نفسه واضغط «اسمح»:")));
 	codeLabel = new QLabel;
 	codeLabel->setObjectName("trediaCode");
@@ -183,6 +256,7 @@ void TrediaDock::buildSignedOut(QWidget *page)
 	connect(openLinkButton, &QPushButton::clicked, this, [this]() { openUrl(verifyUrl); });
 	codeLayout->addWidget(openLinkButton);
 	auto *cancel = new QPushButton(QStringLiteral("إلغاء"));
+	cancel->setFlat(true);
 	connect(cancel, &QPushButton::clicked, this, [this]() {
 		api->cancelLink();
 		codeBox->setVisible(false);
@@ -198,7 +272,7 @@ void TrediaDock::buildSignedOut(QWidget *page)
 	auto *noAccount = new QPushButton(QStringLiteral("ما عندك حساب؟ سجّل مجانًا"));
 	noAccount->setFlat(true);
 	connect(noAccount, &QPushButton::clicked, this, [this]() { openUrl(api->baseUrl() + QStringLiteral("/sign-up")); });
-	layout->addWidget(noAccount);
+	layout->addWidget(noAccount, 0, Qt::AlignLeading);
 	layout->addStretch();
 }
 
@@ -208,7 +282,36 @@ void TrediaDock::buildSignedIn(QWidget *page)
 {
 	auto *layout = new QVBoxLayout(page);
 	layout->setContentsMargins(12, 12, 12, 12);
-	layout->setSpacing(10);
+	layout->setSpacing(8);
+
+	/* Who is signed in */
+	auto *header = card();
+	header->setObjectName("trediaHeader");
+	auto *head = new QHBoxLayout(header);
+	head->setContentsMargins(12, 12, 12, 12);
+	head->setSpacing(10);
+	avatarLabel = new QLabel;
+	avatarLabel->setObjectName("trediaAvatar");
+	avatarLabel->setFixedSize(40, 40);
+	avatarLabel->setAlignment(Qt::AlignCenter);
+	head->addWidget(avatarLabel, 0, Qt::AlignTop);
+	auto *who = new QVBoxLayout;
+	who->setSpacing(2);
+	helloLabel = new QLabel;
+	helloLabel->setObjectName("trediaName");
+	who->addWidget(helloLabel);
+	planLabel = wrapLabel(QString(), "trediaMuted");
+	who->addWidget(planLabel);
+	head->addLayout(who, 1);
+	auto *signOut = new QPushButton(QStringLiteral("خروج"));
+	signOut->setFlat(true);
+	connect(signOut, &QPushButton::clicked, this, [this]() {
+		if (QMessageBox::question(this, QStringLiteral("تسجيل الخروج"), QStringLiteral("تطلع من حسابك في تريديا على هذا الجهاز؟")) ==
+		    QMessageBox::Yes)
+			api->signOut();
+	});
+	head->addWidget(signOut, 0, Qt::AlignTop);
+	layout->addWidget(header);
 
 	updateLabel = new QLabel;
 	updateLabel->setObjectName("trediaUpdate");
@@ -217,44 +320,36 @@ void TrediaDock::buildSignedIn(QWidget *page)
 	updateLabel->setVisible(false);
 	layout->addWidget(updateLabel);
 
-	auto *head = new QHBoxLayout;
-	helloLabel = new QLabel;
-	helloLabel->setObjectName("trediaTitle");
-	head->addWidget(helloLabel, 1);
-	auto *signOut = new QPushButton(QStringLiteral("خروج"));
-	signOut->setFlat(true);
-	connect(signOut, &QPushButton::clicked, this, [this]() {
-		if (QMessageBox::question(this, QStringLiteral("تسجيل الخروج"), QStringLiteral("تطلع من حسابك في تريديا على هذا الجهاز؟")) ==
-		    QMessageBox::Yes)
-			api->signOut();
-	});
-	head->addWidget(signOut);
-	layout->addLayout(head);
-	planLabel = wrapLabel(QString(), "trediaMuted");
-	layout->addWidget(planLabel);
-
 	/* How to multistream: Turbo (Tredia's servers) or from this PC. */
-	auto *modeTitle = new QLabel(QStringLiteral("كيف تبث على أكثر من منصة؟"));
-	modeTitle->setObjectName("trediaHeading");
-	layout->addWidget(modeTitle);
+	layout->addSpacing(6);
+	layout->addWidget(heading(QStringLiteral("طريقة البث على أكثر من منصة")));
 
 	auto *modes = new QButtonGroup(this);
-	auto *turboCard = card();
+	turboCard = card();
+	turboCard->setObjectName("trediaOption");
 	auto *turboLayout = new QVBoxLayout(turboCard);
-	turboRadio = new QRadioButton(QStringLiteral("تيربو من تريديا (ننصح فيه)"));
-	turboRadio->setObjectName("trediaModeTurbo");
+	turboLayout->setContentsMargins(12, 10, 12, 12);
+	turboLayout->setSpacing(4);
+	turboRadio = new QRadioButton(QStringLiteral("تيربو من تريديا"));
+	turboRadio->setObjectName("trediaOptionTitle");
 	turboLayout->addWidget(turboRadio);
-	turboLayout->addWidget(wrapLabel(QStringLiteral(
-					       "جهازك يرسل بث واحد لتريديا، وسيرفراتنا توصله لكل منصاتك. أخف على جهازك وشبكتك، ومعه الشات الموحد والتقرير."),
-				       "trediaMuted"));
+	turboLayout->addWidget(wrapLabel(QStringLiteral("ننصح فيه. جهازك يرسل بث واحد لتريديا، وسيرفراتنا توصله لكل منصاتك. "
+							"أخف على جهازك وشبكتك، ومعه الشات الموحد والتقرير."),
+					 "trediaMuted"));
+	turboCard->installEventFilter(new CardClick(turboCard, [this]() { turboRadio->setChecked(true); }));
 	layout->addWidget(turboCard);
 
-	auto *localCard = card();
+	localCard = card();
+	localCard->setObjectName("trediaOption");
 	auto *localLayout = new QVBoxLayout(localCard);
+	localLayout->setContentsMargins(12, 10, 12, 12);
+	localLayout->setSpacing(6);
 	localRadio = new QRadioButton(QStringLiteral("من جهازك"));
+	localRadio->setObjectName("trediaOptionTitle");
 	localLayout->addWidget(localRadio);
 	localLayout->addWidget(wrapLabel(QStringLiteral("تبث لأكثر من جهة من جهازك مباشرة، بدون تريديا."), "trediaMuted"));
 	localLayout->addWidget(wrapLabel(warningText, "trediaWarning"));
+	localCard->installEventFilter(new CardClick(localCard, [this]() { localRadio->setChecked(true); }));
 	layout->addWidget(localCard);
 
 	modes->addButton(turboRadio);
@@ -264,26 +359,29 @@ void TrediaDock::buildSignedIn(QWidget *page)
 			setTurbo(on, true);
 	});
 
-	/* Turbo panel */
+	/* Turbo: the platforms of this stream */
 	turboPanel = new QWidget;
 	auto *turboBox = new QVBoxLayout(turboPanel);
-	turboBox->setContentsMargins(0, 0, 0, 0);
-	auto *destTitle = new QLabel(QStringLiteral("منصاتك في هذا البث"));
-	destTitle->setObjectName("trediaHeading");
-	turboBox->addWidget(destTitle);
+	turboBox->setContentsMargins(0, 6, 0, 0);
+	turboBox->setSpacing(6);
+	turboBox->addWidget(heading(QStringLiteral("منصاتك في هذا البث")));
 	destinationsBox = new QVBoxLayout;
+	destinationsBox->setSpacing(6);
 	turboBox->addLayout(destinationsBox);
-	auto *manage = new QPushButton(QStringLiteral("أضف منصة أو اربط حساب"));
-	connect(manage, &QPushButton::clicked, this, [this]() { openUrl(api->baseUrl() + QStringLiteral("/live")); });
-	turboBox->addWidget(manage);
 	turboNote = wrapLabel(QString(), "trediaMuted");
 	turboBox->addWidget(turboNote);
+	auto *manage = new QPushButton(QStringLiteral("أضف منصة أو اربط حساب"));
+	manage->setFlat(true);
+	connect(manage, &QPushButton::clicked, this, [this]() { openUrl(api->baseUrl() + QStringLiteral("/live")); });
+	turboBox->addWidget(manage, 0, Qt::AlignLeading);
 	liveStatus = wrapLabel(QString());
 	liveStatus->setObjectName("trediaLive");
 	liveStatus->setVisible(false);
 	turboBox->addWidget(liveStatus);
 	auto *links = new QHBoxLayout;
-	dashboardButton = new QPushButton(QStringLiteral("لوحة البث والشات"));
+	links->setSpacing(8);
+	dashboardButton = new QPushButton(QStringLiteral("لوحة البث"));
+	dashboardButton->setToolTip(QStringLiteral("الشات الموحد وحالة كل منصة"));
 	connect(dashboardButton, &QPushButton::clicked, this, [this]() {
 		const QJsonObject s = liveInfo.value(QStringLiteral("session")).toObject();
 		openUrl(s.isEmpty() ? api->baseUrl() + QStringLiteral("/live") : s.value(QStringLiteral("dashboardUrl")).toString());
@@ -292,23 +390,25 @@ void TrediaDock::buildSignedIn(QWidget *page)
 	connect(reportButton, &QPushButton::clicked, this, [this]() {
 		openUrl(liveInfo.value(QStringLiteral("lastSession")).toObject().value(QStringLiteral("reportUrl")).toString());
 	});
-	links->addWidget(dashboardButton);
-	links->addWidget(reportButton);
+	links->addWidget(dashboardButton, 1);
+	links->addWidget(reportButton, 1);
 	turboBox->addLayout(links);
 	layout->addWidget(turboPanel);
 
-	/* From this PC panel */
+	/* From this PC: extra destinations */
 	localPanel = new QWidget;
 	auto *localBox = new QVBoxLayout(localPanel);
-	localBox->setContentsMargins(0, 0, 0, 0);
-	auto *localTitle = new QLabel(QStringLiteral("جهات إضافية"));
-	localTitle->setObjectName("trediaHeading");
-	localBox->addWidget(localTitle);
-	localBox->addWidget(wrapLabel(QStringLiteral("البث الرئيسي يروح للي في الإعدادات ← البث. وهذي تبدأ معه وتوقف معه:"),
-				      "trediaMuted"));
+	localBox->setContentsMargins(0, 6, 0, 0);
+	localBox->setSpacing(6);
+	localBox->addWidget(heading(QStringLiteral("جهات إضافية")));
+	localBox->addWidget(wrapLabel(QStringLiteral("البث الرئيسي يروح للي في الإعدادات ← البث. وهذي تبدأ معه وتوقف معه:"), "trediaMuted"));
 	localList = new QVBoxLayout;
+	localList->setSpacing(6);
 	localBox->addLayout(localList);
-	auto *form = new QFormLayout;
+	auto *formCard = card();
+	auto *form = new QFormLayout(formCard);
+	form->setContentsMargins(12, 12, 12, 12);
+	form->setSpacing(8);
 	localName = new QLineEdit;
 	localName->setPlaceholderText(QStringLiteral("مثال: كيك"));
 	localServer = new QLineEdit;
@@ -320,10 +420,10 @@ void TrediaDock::buildSignedIn(QWidget *page)
 	form->addRow(QStringLiteral("الاسم"), localName);
 	form->addRow(QStringLiteral("السيرفر"), localServer);
 	form->addRow(QStringLiteral("مفتاح البث"), localKey);
-	localBox->addLayout(form);
 	localError = wrapLabel(QString(), "trediaError");
-	localBox->addWidget(localError);
+	form->addRow(localError);
 	auto *addLocal = new QPushButton(QStringLiteral("أضف الجهة"));
+	addLocal->setObjectName("trediaPrimary");
 	connect(addLocal, &QPushButton::clicked, this, [this]() {
 		const QString server = localServer->text().trimmed();
 		if (!server.startsWith(QStringLiteral("rtmp://")) && !server.startsWith(QStringLiteral("rtmps://"))) {
@@ -348,24 +448,24 @@ void TrediaDock::buildSignedIn(QWidget *page)
 		localError->clear();
 		renderLocalTargets();
 	});
-	localBox->addWidget(addLocal);
+	form->addRow(addLocal);
+	localBox->addWidget(formCard);
 	layout->addWidget(localPanel);
 
 	/* Overlays */
-	auto *overlayTitle = new QLabel(QStringLiteral("إضافات البث"));
-	overlayTitle->setObjectName("trediaHeading");
-	layout->addWidget(overlayTitle);
-	auto *overlays = new QPushButton(QStringLiteral("أضف الشات والتنبيهات وعدّاد المشاهدين لمشهدك"));
+	layout->addSpacing(6);
+	layout->addWidget(heading(QStringLiteral("إضافات البث")));
+	layout->addWidget(wrapLabel(QStringLiteral("الشات والتنبيهات وعدّاد المشاهدين، جاهزة على مشهدك."), "trediaMuted"));
+	auto *overlays = new QPushButton(QStringLiteral("أضفها لمشهدك"));
 	connect(overlays, &QPushButton::clicked, this, &TrediaDock::addOverlays);
 	layout->addWidget(overlays);
 
 	/* Recordings */
-	auto *recTitle = new QLabel(QStringLiteral("تسجيلاتك"));
-	recTitle->setObjectName("trediaHeading");
-	layout->addWidget(recTitle);
+	layout->addSpacing(6);
+	layout->addWidget(heading(QStringLiteral("تسجيلاتك")));
 	layout->addWidget(wrapLabel(QStringLiteral("أول ما توقف التسجيل نسألك ترفعه لمكتبتك في تريديا، وتنشره على يوتيوب وتيك توك من هناك."),
 				    "trediaMuted"));
-	auto *pick = new QPushButton(QStringLiteral("ارفع تسجيل من جهازك…"));
+	auto *pick = new QPushButton(QStringLiteral("ارفع تسجيل…"));
 	connect(pick, &QPushButton::clicked, this, [this]() {
 		const QString path = QFileDialog::getOpenFileName(this, QStringLiteral("اختر التسجيل"), QString(),
 								  QStringLiteral("فيديو (*.mp4 *.mov *.m4v)"));
@@ -378,13 +478,15 @@ void TrediaDock::buildSignedIn(QWidget *page)
 	layout->addWidget(uploadLabel);
 	uploadBar = new QProgressBar;
 	uploadBar->setRange(0, 1000);
+	uploadBar->setTextVisible(false);
 	uploadBar->setVisible(false);
 	layout->addWidget(uploadBar);
 
+	layout->addSpacing(4);
 	auto *site = new QPushButton(QStringLiteral("افتح لوحتي في تريديا"));
 	site->setFlat(true);
 	connect(site, &QPushButton::clicked, this, [this]() { openUrl(api->baseUrl() + QStringLiteral("/creator")); });
-	layout->addWidget(site);
+	layout->addWidget(site, 0, Qt::AlignLeading);
 	layout->addStretch();
 }
 
@@ -401,6 +503,7 @@ void TrediaDock::refreshAll()
 	}
 	pages->setCurrentIndex(1);
 	helloLabel->setText(QStringLiteral("أهلًا %1").arg(api->userName()));
+	avatarLabel->setText(initials(api->userName()));
 	api->get(QStringLiteral("/api/app/me"), [this](const QJsonObject &me, int, const QString &error) {
 		if (!error.isEmpty()) {
 			planLabel->setText(error);
@@ -410,7 +513,7 @@ void TrediaDock::refreshAll()
 		const int hoursLeft = static_cast<int>(plan.value(QStringLiteral("remainingSeconds")).toDouble() / 3600.0);
 		const QJsonValue max = plan.value(QStringLiteral("maxPlatforms"));
 		const QString platforms = max.isNull() ? QStringLiteral("كل المنصات") : QStringLiteral("حتى %1 منصات").arg(max.toInt());
-		planLabel->setText(QStringLiteral("باقة %1: %2، وباقي لك %3 ساعة بث هالشهر.")
+		planLabel->setText(QStringLiteral("باقة %1 · %2 · باقي %3 ساعة هالشهر")
 					   .arg(plan.value(QStringLiteral("name")).toString(), platforms)
 					   .arg(hoursLeft));
 	});
@@ -469,9 +572,31 @@ void TrediaDock::renderDestinations()
 	}
 	for (const QJsonValue &v : dests) {
 		const QJsonObject d = v.toObject();
-		auto *box = new QCheckBox(d.value(QStringLiteral("label")).toString() + QStringLiteral(" · ") +
-					  platformName(d.value(QStringLiteral("platform")).toString()));
+		const QString platform = d.value(QStringLiteral("platform")).toString();
+		auto *row = card();
+		row->setObjectName("trediaRow");
+		auto *h = new QHBoxLayout(row);
+		h->setContentsMargins(12, 8, 12, 8);
+		h->setSpacing(10);
+		auto *dot = new QLabel;
+		dot->setFixedSize(10, 10);
+		dot->setStyleSheet(QStringLiteral("background: %1; border-radius: 5px;").arg(platformColor(platform)));
+		h->addWidget(dot);
+		auto *names = new QVBoxLayout;
+		names->setSpacing(0);
+		auto *label = new QLabel(d.value(QStringLiteral("label")).toString());
+		label->setObjectName("trediaRowTitle");
+		names->addWidget(label);
+		names->addWidget(wrapLabel(platformName(platform), "trediaMuted"));
+		h->addLayout(names, 1);
+		auto *box = new QCheckBox;
+		box->setToolTip(QStringLiteral("يبث على هذي المنصة"));
 		box->setChecked(d.value(QStringLiteral("enabled")).toBool());
+		h->addWidget(box);
+		row->installEventFilter(new CardClick(row, [box]() {
+			if (box->isEnabled())
+				box->toggle();
+		}));
 		const QString id = d.value(QStringLiteral("id")).toString();
 		QPointer<QCheckBox> guard(box);
 		connect(box, &QCheckBox::toggled, this, [this, id, guard](bool on) {
@@ -495,7 +620,7 @@ void TrediaDock::renderDestinations()
 					  }
 				  });
 		});
-		destinationsBox->addWidget(box);
+		destinationsBox->addWidget(row);
 	}
 	const QJsonValue max = liveInfo.value(QStringLiteral("maxPlatforms"));
 	turboNote->setText(max.isNull() ? QStringLiteral("باقتك تبث على كل المنصات مع بعض.")
@@ -512,9 +637,11 @@ void TrediaDock::renderLocalTargets()
 	if (list.isEmpty())
 		localList->addWidget(wrapLabel(QStringLiteral("ما أضفت جهات بعد."), "trediaMuted"));
 	for (const LocalTarget &t : list) {
-		auto *row = new QWidget;
+		auto *row = card();
+		row->setObjectName("trediaRow");
 		auto *h = new QHBoxLayout(row);
-		h->setContentsMargins(0, 0, 0, 0);
+		h->setContentsMargins(12, 6, 8, 6);
+		h->setSpacing(8);
 		auto *box = new QCheckBox(t.name);
 		box->setChecked(t.enabled);
 		const QString id = t.id;
@@ -560,6 +687,8 @@ void TrediaDock::setTurbo(bool on, bool applySettings)
 	}
 	turboPanel->setVisible(on);
 	localPanel->setVisible(!on);
+	setSelected(turboCard, on);
+	setSelected(localCard, !on);
 	saveMode();
 	if (applySettings) {
 		if (on)
