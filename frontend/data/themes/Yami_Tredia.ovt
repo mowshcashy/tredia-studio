@@ -156,3 +156,67 @@ QMenu {
 QMenu::item:selected {
     background-color: var(--primary);
 }
+
+/* The Tredia panel */
+#trediaDock QLabel#trediaTitle {
+    font-size: var(--font_large);
+    font-weight: bold;
+}
+
+#trediaDock QLabel#trediaHeading {
+    font-weight: bold;
+    margin-top: 6px;
+}
+
+#trediaDock QLabel#trediaMuted {
+    color: var(--text_muted);
+}
+
+#trediaDock QLabel#trediaError {
+    color: var(--red1);
+}
+
+#trediaDock QLabel#trediaWarning {
+    background: rgba(229, 175, 36, 0.12);
+    border: 1px solid var(--yellow4);
+    border-radius: var(--border_radius);
+    padding: 6px 8px;
+    color: var(--yellow1);
+}
+
+#trediaDock QLabel#trediaLive {
+    background: rgba(224, 71, 158, 0.14);
+    border: 1px solid var(--pink3);
+    border-radius: var(--border_radius);
+    padding: 6px 8px;
+}
+
+#trediaDock QLabel#trediaUpdate {
+    background: var(--purple6);
+    border-radius: var(--border_radius);
+    padding: 6px 8px;
+}
+
+#trediaDock QLabel#trediaCode {
+    font-size: 22pt;
+    font-weight: bold;
+    padding: 6px;
+}
+
+#trediaDock QFrame#trediaCard {
+    background: var(--grey5);
+    border: 1px solid var(--grey4);
+    border-radius: var(--border_radius_large);
+    padding: 4px;
+}
+
+#trediaDock QPushButton#trediaPrimary {
+    background: var(--pink2);
+    border-color: var(--pink2);
+    font-weight: bold;
+}
+
+#trediaDock QPushButton#trediaPrimary:hover {
+    background: var(--pink1);
+    border-color: var(--pink1);
+}
