@@ -32,6 +32,14 @@
     --purple5: #5C33B8;
     --purple6: #2C1D4A;
 
+    /* OBS's blues become Tredia purples, so no leftover blue shows anywhere */
+    --blue1: #A78BF2;
+    --blue2: #8C64EC;
+    --blue3: #7B4CE0;
+    --blue4: #5C33B8;
+    --blue5: #3A2470;
+    --blue6: #2C1D4A;
+
     /* Live pink and recording red */
     --pink1: #F57DBE;
     --pink2: #E8459B;
@@ -405,6 +413,72 @@ QSlider::add-page:vertical {
 
 QStatusBar {
     color: var(--text_muted);
+}
+
+/* ---- Icons: Tredia's own set (themes/Tredia) ------------------------------------------------- */
+
+QDockWidget {
+    titlebar-close-icon: url(theme:Tredia/close.svg);
+    titlebar-normal-icon: url(theme:Tredia/popout.svg);
+}
+
+.icon-plus { qproperty-icon: url(theme:Tredia/plus.svg); }
+.icon-minus { qproperty-icon: url(theme:Tredia/minus.svg); }
+.icon-trash { qproperty-icon: url(theme:Tredia/trash.svg); }
+.icon-gear { qproperty-icon: url(theme:Tredia/gear.svg); }
+.icon-dots-vert { qproperty-icon: url(theme:Tredia/dots-vert.svg); }
+.icon-refresh { qproperty-icon: url(theme:Tredia/refresh.svg); }
+.icon-up { qproperty-icon: url(theme:Tredia/up.svg); }
+.icon-down { qproperty-icon: url(theme:Tredia/down.svg); }
+.icon-filter { qproperty-icon: url(theme:Tredia/filter.svg); }
+.icon-close { qproperty-icon: url(theme:Tredia/close.svg); }
+
+QPushButton#sourcePropertiesButton { qproperty-icon: url(theme:Tredia/gear.svg); }
+QPushButton#sourceFiltersButton { qproperty-icon: url(theme:Tredia/filter.svg); }
+QToolBarExtension { qproperty-icon: url(theme:Tredia/dots-vert.svg); }
+
+.btn-mute { qproperty-icon: url(theme:Tredia/audio.svg); }
+.btn-mute.checked { qproperty-icon: url(theme:Tredia/mute.svg); }
+.btn-monitor { qproperty-icon: url(theme:Tredia/headphones-off.svg); }
+.btn-monitor.checked { qproperty-icon: url(theme:Tredia/headphones.svg); }
+
+.indicator-lock::indicator:checked,
+.indicator-lock::indicator:checked:hover {
+    image: url(theme:Tredia/locked.svg);
+}
+
+.indicator-lock::indicator:unchecked,
+.indicator-lock::indicator:unchecked:hover {
+    image: url(theme:Tredia/unlocked.svg);
+}
+
+.indicator-visibility::indicator:checked,
+.indicator-visibility::indicator:checked:hover {
+    image: url(theme:Tredia/visible.svg);
+}
+
+.indicator-visibility::indicator:unchecked,
+.indicator-visibility::indicator:unchecked:hover {
+    image: url(theme:Tredia/invisible.svg);
+}
+
+OBSBasic {
+    qproperty-imageIcon: url(theme:Tredia/image.svg);
+    qproperty-colorIcon: url(theme:Tredia/brush.svg);
+    qproperty-slideshowIcon: url(theme:Tredia/slideshow.svg);
+    qproperty-audioInputIcon: url(theme:Tredia/microphone.svg);
+    qproperty-audioOutputIcon: url(theme:Tredia/audio.svg);
+    qproperty-desktopCapIcon: url(theme:Tredia/monitor.svg);
+    qproperty-windowCapIcon: url(theme:Tredia/window.svg);
+    qproperty-gameCapIcon: url(theme:Tredia/gamepad.svg);
+    qproperty-cameraIcon: url(theme:Tredia/camera.svg);
+    qproperty-textIcon: url(theme:Tredia/text.svg);
+    qproperty-mediaIcon: url(theme:Tredia/media.svg);
+    qproperty-browserIcon: url(theme:Tredia/globe.svg);
+    qproperty-groupIcon: url(theme:Tredia/folder.svg);
+    qproperty-sceneIcon: url(theme:Tredia/layers.svg);
+    qproperty-defaultIcon: url(theme:Tredia/box.svg);
+    qproperty-audioProcessOutputIcon: url(theme:Tredia/app-audio.svg);
 }
 
 /* ---- The Tredia panel ------------------------------------------------------------------------- */
