@@ -26,7 +26,8 @@ VIAddVersionKey "LegalCopyright" "GPL-2.0-or-later. OBS Studio (C) Lain Bailey a
 !define MUI_ICON "${ROOT}\frontend\cmake\windows\obs-studio.ico"
 !define MUI_UNICON "${ROOT}\frontend\cmake\windows\obs-studio.ico"
 !define MUI_ABORTWARNING
-!define MUI_FINISHPAGE_RUN "${EXE}"
+!define MUI_FINISHPAGE_RUN
+!define MUI_FINISHPAGE_RUN_FUNCTION LaunchAsUser
 
 !insertmacro MUI_PAGE_WELCOME
 !insertmacro MUI_PAGE_LICENSE "${ROOT}\COPYING"
@@ -37,6 +38,12 @@ VIAddVersionKey "LegalCopyright" "GPL-2.0-or-later. OBS Studio (C) Lain Bailey a
 !insertmacro MUI_UNPAGE_INSTFILES
 !insertmacro MUI_LANGUAGE "Arabic"
 !insertmacro MUI_LANGUAGE "English"
+
+; The installer runs as administrator; opening the app through Explorer starts it as the signed-in
+; user instead (an app left running as administrator can't take files dragged in from Explorer).
+Function LaunchAsUser
+  Exec '"$WINDIR\explorer.exe" "${EXE}"'
+FunctionEnd
 
 Section "Tredia Studio" SecMain
   SectionIn RO
