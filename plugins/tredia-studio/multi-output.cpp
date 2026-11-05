@@ -14,6 +14,8 @@
 #include <QPointer>
 #include <QSaveFile>
 
+#include <cstring>
+
 struct StopContext {
 	QPointer<MultiOutput> owner;
 	QString id;
@@ -39,6 +41,8 @@ MultiOutput::MultiOutput(QObject *parent) : QObject(parent)
 MultiOutput::~MultiOutput()
 {
 	stopAll();
+	obs_encoder_release(verticalEncoder);
+	verticalEncoder = nullptr;
 }
 
 void MultiOutput::setTargets(const QList<LocalTarget> &targets)
@@ -47,7 +51,7 @@ void MultiOutput::setTargets(const QList<LocalTarget> &targets)
 	save();
 }
 
-int MultiOutput::startAll(QString &error)
+int MultiOutput::startAll(QString &error, video_t *verticalVideo, bool withOwn)
 {
 	stopAll();
 	obs_output_t *main = obs_frontend_get_streaming_output();
@@ -63,10 +67,26 @@ int MultiOutput::startAll(QString &error)
 		return 0;
 	}
 
+	const QList<LocalTarget> all = withOwn ? siteList + list : siteList;
 	int started = 0;
-	for (const LocalTarget &t : siteList + list) {
+	for (const LocalTarget &t : all) {
 		if (!t.enabled || t.server.isEmpty())
 			continue;
+
+		/* The vertical picture: one more encoder like the main one, on the vertical canvas, shared by
+		 * every vertical destination. */
+		obs_encoder_t *picture = video;
+		if (t.vertical) {
+			if (!verticalVideo) {
+				emit statusChanged(t.id, QStringLiteral("العمودي مطفّى"));
+				continue;
+			}
+			if (!prepareVerticalEncoder(video, verticalVideo)) {
+				emit statusChanged(t.id, QStringLiteral("تعذّر تجهيز العمودي"));
+				continue;
+			}
+			picture = verticalEncoder;
+		}
 
 		obs_data_t *settings = obs_data_create();
 		obs_data_set_string(settings, "server", t.server.toUtf8().constData());
@@ -82,7 +102,7 @@ int MultiOutput::startAll(QString &error)
 			emit statusChanged(t.id, QStringLiteral("تعذّر التجهيز"));
 			continue;
 		}
-		obs_output_set_video_encoder(output, video);
+		obs_output_set_video_encoder(output, picture);
 		obs_output_set_audio_encoder(output, audio, 0);
 		obs_output_set_service(output, service);
 
@@ -121,6 +141,32 @@ void MultiOutput::stopAll()
 		emit statusChanged(r.id, QStringLiteral("متوقف"));
 	}
 	live.clear();
+	/* The vertical encoder stays until the next stream (or the app closing): its outputs stop in the
+	 * background, and an encoder released while still encoding would be torn down under them. */
+}
+
+/* The vertical encoder: the main stream's kind and settings, fed by the vertical canvas. Kept between
+ * streams, updated while it's idle. */
+bool MultiOutput::prepareVerticalEncoder(obs_encoder_t *mainVideo, video_t *verticalVideo)
+{
+	const char *id = obs_encoder_get_id(mainVideo);
+	if (!id)
+		return false;
+	if (verticalEncoder && !obs_encoder_active(verticalEncoder) && strcmp(obs_encoder_get_id(verticalEncoder), id) != 0) {
+		obs_encoder_release(verticalEncoder);
+		verticalEncoder = nullptr;
+	}
+	obs_data_t *settings = obs_encoder_get_settings(mainVideo);
+	if (!verticalEncoder)
+		verticalEncoder = obs_video_encoder_create(id, "tredia-vertical-video", settings, nullptr);
+	else if (!obs_encoder_active(verticalEncoder))
+		obs_encoder_update(verticalEncoder, settings);
+	obs_data_release(settings);
+	if (!verticalEncoder)
+		return false;
+	if (!obs_encoder_active(verticalEncoder))
+		obs_encoder_set_video(verticalEncoder, verticalVideo);
+	return true;
 }
 
 /* Runs on a libobs thread: hand the news to the UI thread. */

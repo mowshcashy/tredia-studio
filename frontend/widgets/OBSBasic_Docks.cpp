@@ -82,8 +82,10 @@ void OBSBasic::on_resetDocks_triggered(bool force)
 
 	bottomDocksHeight = bottomDocksHeight * 225 / 1000;
 
-	/* Tredia Studio's default layout: scenes and sources on one side, the Tredia panel on the other,
-	 * the mixer and the go-live controls under the preview. Transitions stay one click away in Docks. */
+	/* Tredia Studio's default layout, the same as Tredia's own studio: scenes over sources on the
+	 * right, the Tredia panel on the left, the mixer under the preview (the side columns take the
+	 * window's full height). Qt keeps dock areas where they're named even in Arabic, so "right" is the
+	 * right. Transitions stay one click away in the menu's panels. */
 	ui->scenesDock->setVisible(true);
 	ui->sourcesDock->setVisible(true);
 	ui->mixerDock->setVisible(true);
@@ -92,19 +94,27 @@ void OBSBasic::on_resetDocks_triggered(bool force)
 	statsDock->setVisible(false);
 	statsDock->setFloating(true);
 
+	ui->scenesDock->setFloating(false);
+	ui->sourcesDock->setFloating(false);
+	ui->mixerDock->setFloating(false);
+	addDockWidget(Qt::RightDockWidgetArea, ui->scenesDock, Qt::Vertical);
+	addDockWidget(Qt::RightDockWidgetArea, ui->sourcesDock, Qt::Vertical);
+	addDockWidget(Qt::BottomDockWidgetArea, ui->mixerDock);
+
 	UNUSED_PARAMETER(cx);
 	resizeDocks({ui->mixerDock}, {bottomDocksHeight * 8 / 10}, Qt::Vertical);
 
-	int sideDockWidth = std::min(width() * 30 / 100, 320);
+	int sideDockWidth = std::min(width() * 24 / 100, 300);
 	resizeDocks({ui->scenesDock, ui->sourcesDock}, {sideDockWidth, sideDockWidth}, Qt::Horizontal);
+	resizeDocks({ui->scenesDock, ui->sourcesDock}, {height() * 34 / 100, height() * 66 / 100}, Qt::Vertical);
 
 	for (auto &extra : extraDocks) {
 		QDockWidget *dock = extra.get();
 		if (dock && dock->objectName() == "tredia") {
 			dock->setFloating(false);
-			addDockWidget(Qt::RightDockWidgetArea, dock);
+			addDockWidget(Qt::LeftDockWidgetArea, dock);
 			dock->setVisible(true);
-			resizeDocks({dock}, {std::min(width() * 26 / 100, 380)}, Qt::Horizontal);
+			resizeDocks({dock}, {std::min(width() * 26 / 100, 340)}, Qt::Horizontal);
 		}
 	}
 

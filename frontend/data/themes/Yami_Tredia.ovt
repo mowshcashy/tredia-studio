@@ -15,33 +15,42 @@
 }
 
 @OBSThemeVars {
-    /* tredia.cloud's stage colours */
+    /* Tredia's own studio (Tredia Studio for PC), dark: its colours measured from the app itself. */
     --tr_window: #100822;
+    --tr_glow_pink: #311335;
+    --tr_glow_blue: #261247;
+    --tr_bar: #1A1033;
     --tr_preview: #0A0515;
-    --tr_card: #1C1236;
-    --tr_card_line: #2D263D;
-    --tr_raised: #241A40;
-    --tr_raised_line: #3A2F57;
-    --tr_hover: #2C2150;
+    --tr_card: #1E172F;
+    --tr_card_line: #2E2741;
+    --tr_divider: #2C2539;
+    --tr_raised: #1C1236;
+    --tr_raised_line: #352E44;
+    --tr_hover: #1C1236;
     --tr_text: #F5F1FF;
     --tr_muted: #A99FC9;
     --tr_faint: #6E6390;
     --tr_accent: #7B4CE0;
     --tr_accent_hover: #8C64EC;
     --tr_accent_ink: #FFFFFF;
+    /* The studio's own accent (its "+ مصدر", switches, selected cards): light purple, dark ink. */
+    --tr_brand: #B9A0F7;
+    --tr_brand_hover: #CBB8FA;
+    --tr_brand_ink: #1D1236;
     --tr_link: #B9A0F7;
-    --tr_select: #2C1D4A;
-    --tr_select_line: #7B4CE0;
-    --tr_live: #E0479E;
-    --tr_live_hover: #EA62AC;
-    --tr_live_soft: rgba(224, 71, 158, 0.12);
-    --tr_rec: #D3364C;
-    --tr_rec_hover: #E0505F;
+    --tr_select: #312747;
+    --tr_select_line: #6C5B93;
+    --tr_live: #EA62AC;
+    --tr_live_hover: #F07DBB;
+    --tr_live_soft: rgba(234, 98, 172, 0.12);
+    --tr_rec: #F0606F;
+    --tr_rec_hover: #F37A86;
+    --tr_ok: #34C79A;
     --tr_warn_bg: rgba(242, 180, 65, 0.08);
     --tr_warn_line: rgba(242, 180, 65, 0.40);
     --tr_warn_text: #F6CF7E;
-    --tr_meter_bg: #2C1D4A;
-    --tr_meter: #8C64EC;
+    --tr_meter_bg: #2C2539;
+    --tr_meter: #B9A0F7;
 
     /* Yami's own scale, mapped onto them */
     --grey1: #6E6390;
@@ -93,7 +102,7 @@
     --border_color: var(--tr_card_line);
     --border_radius: 10px;
     --border_radius_small: 7px;
-    --border_radius_large: 18px;
+    --border_radius_large: 22px;
 
     --input_bg: var(--tr_raised);
     --input_bg_hover: var(--tr_hover);
@@ -142,7 +151,12 @@ QWidget {
 
 /* ---- The stage and its cards ------------------------------------------------------------------ */
 
-QMainWindow,
+/* The window: the studio's colour with its two soft glows, pink in the top corner and blue in the
+ * bottom one, showing in the gaps between the panels. */
+QMainWindow {
+    background: qlineargradient(x1: 1, y1: 0, x2: 0, y2: 1, stop: 0 var(--tr_glow_pink), stop: 0.36 var(--tr_window), stop: 0.66 var(--tr_window), stop: 1 var(--tr_glow_blue));
+}
+
 QStatusBar,
 QMenuBar {
     background-color: var(--tr_window);
@@ -150,8 +164,8 @@ QMenuBar {
 
 QMainWindow::separator {
     background: transparent;
-    width: 10px;
-    height: 10px;
+    width: 12px;
+    height: 12px;
     margin: 0px;
 }
 
@@ -169,13 +183,58 @@ QDockWidget {
     titlebar-normal-icon: url(theme:Tredia/popout.svg);
 }
 
+/* A panel's header: Tredia Studio's own (its name and its "+"), or Qt's title for other panels. */
+QWidget#trediaPanelHeader,
 QDockWidget::title {
     background-color: var(--tr_card);
     border: 1px solid var(--tr_card_line);
-    border-bottom: none;
+    border-bottom: 1px solid var(--tr_divider);
     border-top-left-radius: var(--border_radius_large);
     border-top-right-radius: var(--border_radius_large);
-    padding: 10px 16px 6px 16px;
+}
+
+QDockWidget::title {
+    padding: 13px 20px 11px 20px;
+}
+
+QLabel#trediaPanelTitle {
+    background: transparent;
+    font-size: var(--font_large);
+    font-weight: 600;
+    color: var(--tr_text);
+}
+
+QToolButton#trediaPanelAdd {
+    qproperty-icon: url(theme:Tredia/plus.svg);
+    background: transparent;
+    border: none;
+    border-radius: 16px;
+    padding: 8px;
+    margin: 0px;
+}
+
+QToolButton#trediaPanelAdd:hover {
+    background: var(--tr_raised);
+}
+
+QPushButton#trediaPanelPrimary {
+    qproperty-icon: url(theme:TrediaInk/plus.svg);
+    icon-size: 14px;
+    background: var(--tr_brand);
+    border: 1px solid var(--tr_brand);
+    color: var(--tr_brand_ink);
+    border-radius: 16px;
+    height: 32px;
+    min-height: 32px;
+    max-height: 32px;
+    padding: 0px 14px;
+    margin: 0px;
+    font-weight: 600;
+}
+
+QPushButton#trediaPanelPrimary:hover {
+    background: var(--tr_brand_hover);
+    border-color: var(--tr_brand_hover);
 }
 
 QDockWidget::close-button,
@@ -227,19 +286,19 @@ OBSQTDisplay {
 
 QListView,
 QListWidget {
-    padding: 6px;
+    padding: 8px;
 }
 
 /* Only the scenes list gets inner padding: the sources list places a widget in each row, and padding
- * there clips it. */
+ * there clips it. Rows are the studio's soft pills. */
 QListWidget::item {
-    padding: 6px 10px;
+    padding: 9px 12px;
 }
 
 QListView::item,
 QListWidget::item,
 SourceTreeItem {
-    border-radius: 10px;
+    border-radius: 16px;
 }
 
 QListView::item:hover,
@@ -418,11 +477,11 @@ QSlider::add-page:vertical {
 /* ---- The top bar: logo, live status, go live, record ------------------------------------------ */
 
 QToolBar#trediaTopBar {
-    background: var(--tr_card);
+    background: var(--tr_bar);
     border: none;
-    border-bottom: 1px solid var(--tr_card_line);
-    padding: 8px 16px;
-    spacing: 8px;
+    border-bottom: 1px solid var(--tr_divider);
+    padding: 8px 14px;
+    spacing: 6px;
 }
 
 QToolBar#trediaTopBar QLabel {
@@ -437,7 +496,7 @@ QLabel#trediaTopName {
 }
 
 QLabel#trediaStatus {
-    background: var(--tr_raised);
+    background: transparent;
     border: 1px solid var(--tr_raised_line);
     border-radius: 15px;
     padding: 5px 16px;
@@ -447,7 +506,7 @@ QLabel#trediaStatus {
 
 QLabel#trediaStatus[state="starting"] {
     color: var(--tr_text);
-    border-color: var(--tr_accent);
+    border-color: var(--tr_brand);
 }
 
 QLabel#trediaStatus[state="live"] {
@@ -464,18 +523,73 @@ QLabel#trediaStatus[state="rec"] {
 
 QToolBar#trediaTopBar QToolButton {
     border: 1px solid transparent;
-    border-radius: 11px;
+    border-radius: 16px;
     padding: 7px;
     background: transparent;
 }
 
 QToolBar#trediaTopBar QToolButton:hover {
-    background: var(--tr_hover);
+    background: var(--tr_raised);
 }
 
 QToolBar#trediaTopBar QToolButton:checked {
     background: var(--tr_select);
     border-color: var(--tr_select_line);
+}
+
+QToolButton#trediaMenuButton {
+    qproperty-icon: url(theme:Tredia/menu.svg);
+}
+
+/* The vertical picture in the top bar: horizontal / both / vertical, and its switch. */
+QWidget#trediaSegment {
+    background: var(--tr_raised);
+    border: 1px solid var(--tr_raised_line);
+    border-radius: 18px;
+}
+
+QToolBar#trediaTopBar QToolButton#trediaSegmentButton {
+    background: transparent;
+    border: none;
+    border-radius: 14px;
+    padding: 4px 12px;
+    color: var(--tr_muted);
+    font-weight: 500;
+}
+
+QToolBar#trediaTopBar QToolButton#trediaSegmentButton:hover {
+    background: transparent;
+    color: var(--tr_text);
+}
+
+QToolBar#trediaTopBar QToolButton#trediaSegmentButton:checked {
+    background: var(--tr_brand);
+    color: var(--tr_brand_ink);
+    border: none;
+}
+
+QToolBar#trediaTopBar QCheckBox#trediaSwitch {
+    background: transparent;
+    color: var(--tr_muted);
+    spacing: 8px;
+    padding: 0px 6px;
+}
+
+/* The vertical picture's preview, beside OBS's own. */
+TrediaVerticalPreview {
+    qproperty-displayBackgroundColor: var(--tr_preview);
+}
+
+QLabel#trediaPreviewCaption {
+    background: transparent;
+    color: var(--tr_muted);
+    font-weight: 500;
+    padding: 6px 2px 0px 2px;
+}
+
+QToolButton#trediaMenuButton::menu-indicator {
+    image: none;
+    width: 0px;
 }
 
 QToolButton#trediaThemeButton {
@@ -490,18 +604,22 @@ QToolButton#trediaSettingsButton {
     qproperty-icon: url(theme:Tredia/gear.svg);
 }
 
+/* Record and go live: the studio's pill buttons, with the red dot and the white live dot (a stop
+ * square while running). */
 QPushButton#trediaGoLive,
 QPushButton#trediaRecord {
-    height: 36px;
-    min-height: 36px;
-    max-height: 36px;
-    border-radius: 18px;
-    padding: 0px 22px;
+    height: 40px;
+    min-height: 40px;
+    max-height: 40px;
+    border-radius: 20px;
+    padding: 0px 20px;
     margin: 0px;
-    font-weight: bold;
+    font-weight: 600;
+    icon-size: 12px;
 }
 
 QPushButton#trediaGoLive {
+    qproperty-icon: url(theme:Tredia/live-dot.svg);
     background: var(--tr_live);
     border: 1px solid var(--tr_live);
     color: #FFFFFF;
@@ -513,9 +631,10 @@ QPushButton#trediaGoLive:hover {
 }
 
 QPushButton#trediaGoLive[live="true"] {
-    background: var(--tr_text);
-    border-color: var(--tr_text);
-    color: var(--tr_card);
+    qproperty-icon: url(theme:TrediaInk/stop.svg);
+    background: var(--tr_brand);
+    border-color: var(--tr_brand);
+    color: var(--tr_brand_ink);
 }
 
 QPushButton#trediaGoLive:disabled {
@@ -525,16 +644,18 @@ QPushButton#trediaGoLive:disabled {
 }
 
 QPushButton#trediaRecord {
+    qproperty-icon: url(theme:Tredia/rec.svg);
     background: var(--tr_raised);
     border: 1px solid var(--tr_raised_line);
     color: var(--tr_text);
 }
 
 QPushButton#trediaRecord:hover {
-    background: var(--tr_hover);
+    border-color: var(--tr_select_line);
 }
 
 QPushButton#trediaRecord[on="true"] {
+    qproperty-icon: url(theme:Tredia/stop.svg);
     background: var(--tr_rec);
     border-color: var(--tr_rec);
     color: #FFFFFF;
@@ -570,10 +691,11 @@ QPushButton#trediaRecord[on="true"] {
 
 /* ---- Audio mixer ------------------------------------------------------------------------------ */
 
+/* The studio's meter: one quiet track, purple rising to amber and pink when it's loud. */
 VolumeMeter {
     qproperty-backgroundNominalColor: var(--tr_meter_bg);
-    qproperty-backgroundWarningColor: #4A3A16;
-    qproperty-backgroundErrorColor: #4D1733;
+    qproperty-backgroundWarningColor: var(--tr_meter_bg);
+    qproperty-backgroundErrorColor: var(--tr_meter_bg);
     qproperty-foregroundNominalColor: var(--tr_meter);
     qproperty-foregroundWarningColor: #F2B441;
     qproperty-foregroundErrorColor: var(--tr_live);
@@ -692,8 +814,18 @@ OBSBasic {
     color: var(--tr_rec);
 }
 
+#trediaDock QLabel#trediaOk {
+    color: var(--tr_ok);
+}
+
+#trediaDock QLabel#trediaField {
+    font-weight: 500;
+    color: var(--tr_text);
+    padding-top: 2px;
+}
+
 #trediaDock QLabel#trediaAvatar {
-    background: qlineargradient(x1: 0, y1: 0, x2: 1, y2: 1, stop: 0 #7B4CE0, stop: 1 #E0479E);
+    background: qlineargradient(x1: 0, y1: 0, x2: 1, y2: 1, stop: 0 var(--tr_brand), stop: 1 var(--tr_live));
     color: #FFFFFF;
     border-radius: 20px;
     font-weight: bold;
@@ -705,12 +837,50 @@ OBSBasic {
 #trediaDock QFrame#trediaRow {
     background: var(--tr_raised);
     border: 1px solid var(--tr_raised_line);
-    border-radius: 14px;
+    border-radius: 18px;
 }
 
 #trediaDock QFrame#trediaOption[selected="true"] {
     background: var(--tr_select);
-    border: 1px solid var(--tr_select_line);
+    border: 1px solid var(--tr_brand);
+}
+
+/* Fields: the studio's soft, rounded inputs. */
+#trediaDock QLineEdit,
+#trediaDock QPlainTextEdit {
+    background: var(--tr_raised);
+    border: 1px solid var(--tr_raised_line);
+    border-radius: 14px;
+}
+
+#trediaDock QLineEdit {
+    min-height: 38px;
+    padding: 0px 12px;
+}
+
+#trediaDock QPlainTextEdit {
+    padding: 6px 8px;
+}
+
+#trediaDock QLineEdit:focus,
+#trediaDock QPlainTextEdit:focus {
+    border-color: var(--tr_brand);
+}
+
+/* A platform's on/off: a switch, as in the studio. */
+QCheckBox#trediaSwitch::indicator {
+    width: 44px;
+    height: 24px;
+}
+
+QCheckBox#trediaSwitch::indicator:unchecked,
+QCheckBox#trediaSwitch::indicator:unchecked:hover {
+    image: url(theme:Tredia/switch_off.svg);
+}
+
+QCheckBox#trediaSwitch::indicator:checked,
+QCheckBox#trediaSwitch::indicator:checked:hover {
+    image: url(theme:Tredia/switch_on.svg);
 }
 
 #trediaDock QLabel#trediaWarning {
@@ -741,30 +911,63 @@ OBSBasic {
     padding: 6px;
 }
 
+/* Buttons: the studio's pills (40 px), the main one in its accent, quiet text buttons for links. */
 #trediaDock QPushButton {
-    border-radius: 13px;
+    border-radius: 19px;
+    min-height: 38px;
+    font-weight: 600;
 }
 
 #trediaDock QPushButton#trediaPrimary {
-    background: var(--tr_accent);
-    border: 1px solid var(--tr_accent);
-    color: var(--tr_accent_ink);
-    font-weight: bold;
+    background: var(--tr_brand);
+    border: 1px solid var(--tr_brand);
+    color: var(--tr_brand_ink);
 }
 
 #trediaDock QPushButton#trediaPrimary:hover {
-    background: var(--tr_accent_hover);
-    border-color: var(--tr_accent_hover);
+    background: var(--tr_brand_hover);
+    border-color: var(--tr_brand_hover);
+}
+
+#trediaDock QPushButton#trediaPrimary:disabled {
+    background: var(--tr_raised);
+    border-color: var(--tr_raised_line);
+    color: var(--tr_faint);
 }
 
 #trediaDock QPushButton:flat {
     background: transparent;
     border: 1px solid transparent;
-    color: var(--tr_link);
-    padding-left: 4px;
-    padding-right: 4px;
+    color: var(--tr_muted);
+    min-height: 30px;
+    border-radius: 15px;
+    padding-left: 12px;
+    padding-right: 12px;
 }
 
 #trediaDock QPushButton:flat:hover {
-    background: var(--tr_hover);
+    background: var(--tr_raised);
+    color: var(--tr_text);
+}
+
+/* A platform's picture: horizontal or vertical (pink, as in the studio). */
+#trediaDock QPushButton#trediaOrientation {
+    min-height: 24px;
+    max-height: 24px;
+    border-radius: 12px;
+    padding: 0px 10px;
+    font-weight: 500;
+    background: transparent;
+    border: 1px solid var(--tr_raised_line);
+    color: var(--tr_text);
+}
+
+#trediaDock QPushButton#trediaOrientation:hover {
+    border-color: var(--tr_brand);
+}
+
+#trediaDock QPushButton#trediaOrientation[vertical="true"] {
+    background: var(--tr_live_soft);
+    border-color: var(--tr_live);
+    color: var(--tr_live);
 }

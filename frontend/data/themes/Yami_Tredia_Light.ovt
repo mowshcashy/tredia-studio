@@ -13,12 +13,16 @@
 }
 
 @OBSThemeVars {
-    /* tredia.cloud's colours */
+    /* Tredia's own studio (Tredia Studio for PC), light: its colours measured from the app itself. */
     --tr_window: #ECE7F8;
+    --tr_glow_pink: #F2D6EF;
+    --tr_glow_blue: #D5D9F4;
+    --tr_bar: #F6F4FC;
     --tr_preview: #E3DCF3;
-    --tr_card: #F8F6FD;
-    --tr_card_line: #E2DAF3;
-    --tr_raised: #FFFFFF;
+    --tr_card: #F8F6FC;
+    --tr_card_line: #FCFBFE;
+    --tr_divider: #E5DFF3;
+    --tr_raised: #F8F6FD;
     --tr_raised_line: #DDD5EF;
     --tr_hover: #EFE9FB;
     --tr_text: #1D1236;
@@ -27,18 +31,22 @@
     --tr_accent: #5B2A9E;
     --tr_accent_hover: #6A35B5;
     --tr_accent_ink: #FFFFFF;
+    --tr_brand: #5B2A9E;
+    --tr_brand_hover: #6A35B5;
+    --tr_brand_ink: #FFFFFF;
     --tr_link: #5B2A9E;
-    --tr_select: #E7DFF8;
-    --tr_select_line: #B6A2E8;
+    --tr_select: #E5DEF1;
+    --tr_select_line: #AA90CD;
     --tr_live: #E0479E;
     --tr_live_hover: #E862A8;
     --tr_live_soft: rgba(224, 71, 158, 0.10);
     --tr_rec: #D3364C;
     --tr_rec_hover: #DD4C60;
+    --tr_ok: #17A27E;
     --tr_warn_bg: #FFF7E8;
     --tr_warn_line: #F0CB82;
     --tr_warn_text: #7A4E00;
-    --tr_meter_bg: #E3DCF3;
+    --tr_meter_bg: #E5DFF3;
     --tr_meter: #5B2A9E;
 
     --grey1: #A39BBB;
@@ -102,6 +110,37 @@ QToolButton#trediaStudioButton {
 
 QToolButton#trediaSettingsButton {
     qproperty-icon: url(theme:TrediaInk/gear.svg);
+}
+
+QToolButton#trediaMenuButton {
+    qproperty-icon: url(theme:TrediaInk/menu.svg);
+}
+
+QToolButton#trediaPanelAdd {
+    qproperty-icon: url(theme:TrediaInk/plus.svg);
+}
+
+/* White on the studio's plum */
+QPushButton#trediaPanelPrimary {
+    qproperty-icon: url(theme:Tredia/plus.svg);
+}
+
+QPushButton#trediaGoLive[live="true"] {
+    qproperty-icon: url(theme:Tredia/stop.svg);
+}
+
+QPushButton#trediaRecord {
+    qproperty-icon: url(theme:TrediaInk/rec.svg);
+}
+
+QCheckBox#trediaSwitch::indicator:unchecked,
+QCheckBox#trediaSwitch::indicator:unchecked:hover {
+    image: url(theme:TrediaInk/switch_off.svg);
+}
+
+QCheckBox#trediaSwitch::indicator:checked,
+QCheckBox#trediaSwitch::indicator:checked:hover {
+    image: url(theme:TrediaInk/switch_on.svg);
 }
 
 /* ---- Icons: deep plum, for light backgrounds ------------------------------------------------------------------ */
@@ -168,9 +207,6 @@ OBSBasic {
 /* ---- Light-only touches ----------------------------------------------------------------------- */
 
 VolumeMeter {
-    qproperty-backgroundWarningColor: #F6E3B5;
-    qproperty-backgroundErrorColor: #F6CFE2;
-    qproperty-foregroundWarningColor: #C98A00;
     qproperty-magnitudeColor: #1D1236;
 }
 

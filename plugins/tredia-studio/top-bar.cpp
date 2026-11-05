@@ -1,10 +1,17 @@
 #include "top-bar.hpp"
+#include "main-window.hpp"
 #include "tredia-dock.hpp"
+#include "vertical.hpp"
 
 #include <QAction>
+#include <QButtonGroup>
+#include <QCheckBox>
+#include <QHBoxLayout>
 #include <QIcon>
 #include <QLabel>
 #include <QMainWindow>
+#include <QMenu>
+#include <QMessageBox>
 #include <QPushButton>
 #include <QSignalBlocker>
 #include <QStyle>
@@ -51,7 +58,10 @@ QWidget *spacer()
 
 } // namespace
 
-TrediaTopBar::TrediaTopBar(QMainWindow *main, TrediaDock *dock_) : QToolBar(main), dock(dock_)
+TrediaTopBar::TrediaTopBar(QMainWindow *main, TrediaDock *dock_, TrediaVertical *vertical_)
+	: QToolBar(main),
+	  dock(dock_),
+	  vertical(vertical_)
 {
 	setObjectName("trediaTopBar");
 	setWindowTitle(QStringLiteral("شريط تريديا"));
@@ -66,6 +76,68 @@ TrediaTopBar::TrediaTopBar(QMainWindow *main, TrediaDock *dock_) : QToolBar(main
 	auto *name = new QLabel(QStringLiteral("تريديا ستوديو"));
 	name->setObjectName("trediaTopName");
 	addWidget(name);
+
+	/* OBS's menus (File, Edit, View, panels, profiles, tools, help) in one button: the window has no
+	 * menu bar row, like Tredia's own studio. */
+	menuButton = iconButton("trediaMenuButton", QStringLiteral("القائمة"));
+	menuButton->setPopupMode(QToolButton::InstantPopup);
+	auto *menu = new QMenu(menuButton);
+	menu->setObjectName("trediaMainMenu");
+	QPointer<QMainWindow> mainWindow(main);
+	connect(menu, &QMenu::aboutToShow, this, [mainWindow, menu]() { TrediaWindow::fillMenu(mainWindow, menu); });
+	menuButton->setMenu(menu);
+	addWidget(menuButton);
+
+	/* The vertical picture, as in Tredia's own studio: which previews show, and the picture on/off. */
+	viewBox = new QWidget;
+	viewBox->setObjectName("trediaSegment");
+	viewBox->setAttribute(Qt::WA_StyledBackground, true);
+	auto *views = new QHBoxLayout(viewBox);
+	views->setContentsMargins(3, 3, 3, 3);
+	views->setSpacing(2);
+	auto *group = new QButtonGroup(viewBox);
+	group->setExclusive(true);
+	const char *const modes[3] = {"h", "both", "v"};
+	const QString labels[3] = {QStringLiteral("أفقي"), QStringLiteral("الاثنين"), QStringLiteral("عمودي")};
+	for (int i = 0; i < 3; i++) {
+		auto *button = new QToolButton;
+		button->setObjectName("trediaSegmentButton");
+		button->setText(labels[i]);
+		button->setCheckable(true);
+		button->setToolButtonStyle(Qt::ToolButtonTextOnly);
+		button->setCursor(Qt::PointingHandCursor);
+		const QString mode = QString::fromUtf8(modes[i]);
+		connect(button, &QToolButton::clicked, this, [this, mode]() {
+			if (vertical)
+				vertical->setView(mode);
+		});
+		group->addButton(button);
+		views->addWidget(button);
+		viewButtons[i] = button;
+	}
+	addWidget(viewBox);
+
+	verticalSwitch = new QCheckBox(QStringLiteral("العمودي"));
+	verticalSwitch->setObjectName("trediaSwitch");
+	verticalSwitch->setToolTip(QStringLiteral("الإطار العمودي: صورة طولية لتيك توك والشورتس جنب الأفقية"));
+	verticalSwitch->setCursor(Qt::PointingHandCursor);
+	connect(verticalSwitch, &QCheckBox::toggled, this, [this](bool on) {
+		if (!vertical)
+			return;
+		if (obs_frontend_streaming_active() || obs_frontend_recording_active()) {
+			/* The picture can't change shape mid-stream, as in Tredia's own studio. */
+			QSignalBlocker block(verticalSwitch);
+			verticalSwitch->setChecked(vertical->enabled());
+			QMessageBox::information(this, QStringLiteral("تريديا"),
+						 QStringLiteral("وقّف البث والتسجيل أول، بعدها شغّل أو أطفئ العمودي."));
+			return;
+		}
+		vertical->setEnabled(on);
+	});
+	addWidget(verticalSwitch);
+	if (vertical)
+		connect(vertical, &TrediaVertical::changed, this, &TrediaTopBar::refreshVertical);
+	refreshVertical();
 
 	addWidget(spacer());
 	status = new QLabel;
@@ -120,6 +192,20 @@ TrediaTopBar::TrediaTopBar(QMainWindow *main, TrediaDock *dock_) : QToolBar(main
 	clock.setInterval(1000);
 	connect(&clock, &QTimer::timeout, this, &TrediaTopBar::refresh);
 	refresh();
+}
+
+void TrediaTopBar::refreshVertical()
+{
+	const bool on = vertical && vertical->enabled();
+	{
+		QSignalBlocker block(verticalSwitch);
+		verticalSwitch->setChecked(on);
+	}
+	viewBox->setVisible(on);
+	const QString mode = vertical ? vertical->view() : QStringLiteral("both");
+	const char *const modes[3] = {"h", "both", "v"};
+	for (int i = 0; i < 3; i++)
+		viewButtons[i]->setChecked(mode == QString::fromUtf8(modes[i]));
 }
 
 void TrediaTopBar::triggerMainAction(const char *name)

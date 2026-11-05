@@ -1154,11 +1154,17 @@ void OBSBasic::OBSInit()
 	}
 
 	/* Tredia Studio: everyone gets the new layout once (top bar instead of the controls dock,
-	 * a horizontal mixer); after that their own arrangement is kept. */
-	if (config_get_int(App()->GetUserConfig(), "BasicWindow", "TrediaLayout") < 2) {
+	 * a horizontal mixer); after that their own arrangement is kept. Layout 3 is Tredia's own
+	 * studio: scenes and sources on the right, the Tredia panel on the left, and no status bar, no
+	 * bar under the preview and no toolbars under the lists (each panel's header has its "+", and
+	 * a list's other actions are on a right-click). All three come back from View in the menu. */
+	if (config_get_int(App()->GetUserConfig(), "BasicWindow", "TrediaLayout") < 3) {
 		config_set_bool(App()->GetUserConfig(), "BasicWindow", "VerticalVolumeControl", false);
+		ui->toggleStatusBar->setChecked(false);
+		ui->toggleContextBar->setChecked(false);
+		ui->toggleListboxToolbars->setChecked(false);
 		on_resetDocks_triggered(true);
-		config_set_int(App()->GetUserConfig(), "BasicWindow", "TrediaLayout", 2);
+		config_set_int(App()->GetUserConfig(), "BasicWindow", "TrediaLayout", 3);
 		config_save_safe(App()->GetUserConfig(), "tmp", nullptr);
 	}
 

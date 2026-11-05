@@ -1,4 +1,5 @@
 #include "tredia-dock.hpp"
+#include "vertical.hpp"
 
 #include <obs-module.h>
 #include <graphics/vec2.h>
@@ -9,7 +10,11 @@
 #include <functional>
 
 #include <QButtonGroup>
+#include <QCompleter>
 #include <QEvent>
+#include <QPlainTextEdit>
+#include <QStringListModel>
+#include <QTextCursor>
 #include <QIcon>
 #include <QMouseEvent>
 #include <QStyle>
@@ -42,9 +47,8 @@
 
 namespace {
 
-const QString warningText = QStringLiteral(
-	"بطيء ويضعف الأداء: جهازك يرسل نسخة كاملة لكل منصة، فتحتاج سرعة رفع مضروبة في عدد المنصات، "
-	"ويزيد الحمل على جهازك، وأي ضعف في الشبكة يقطّع كل البثوث مع بعض. ننصحك بتيربو.");
+const QString warningText =
+	QStringLiteral("جهازك يرسل لكل منصة مباشرة: يحتاج سرعة رفع أكبر بعدد المنصات، وأي ضعف بالشبكة يقطّع الكل.");
 
 QString moduleFile(const char *name)
 {
@@ -162,7 +166,11 @@ QString targetStatus(const QString &s)
 
 } // namespace
 
-TrediaDock::TrediaDock(QWidget *parent) : QWidget(parent), api(new TrediaApi(this)), multi(new MultiOutput(this))
+TrediaDock::TrediaDock(QWidget *parent, TrediaVertical *vertical_)
+	: QWidget(parent),
+	  api(new TrediaApi(this)),
+	  multi(new MultiOutput(this)),
+	  vertical(vertical_)
 {
 	setObjectName("trediaDock");
 	/* A plain QWidget only paints the theme's background with this set. */
@@ -210,6 +218,9 @@ TrediaDock::TrediaDock(QWidget *parent) : QWidget(parent), api(new TrediaApi(thi
 
 	livePoll.setInterval(10000);
 	connect(&livePoll, &QTimer::timeout, this, &TrediaDock::refreshLive);
+	/* The vertical picture on or off: each platform's horizontal/vertical choice shows or hides. */
+	if (vertical)
+		connect(vertical, &TrediaVertical::changed, this, &TrediaDock::renderDestinations);
 
 	refreshAll();
 	checkForUpdate();
@@ -320,9 +331,9 @@ void TrediaDock::buildSignedIn(QWidget *page)
 	updateLabel->setVisible(false);
 	layout->addWidget(updateLabel);
 
-	/* How to multistream: Turbo (Tredia's servers) or from this PC. */
+	/* How to multistream: Turbo (Tredia's servers) or from this PC, in the words of Tredia's own studio. */
 	layout->addSpacing(6);
-	layout->addWidget(heading(QStringLiteral("طريقة البث على أكثر من منصة")));
+	layout->addWidget(heading(QStringLiteral("طريقة البث")));
 
 	auto *modes = new QButtonGroup(this);
 	turboCard = card();
@@ -333,8 +344,7 @@ void TrediaDock::buildSignedIn(QWidget *page)
 	turboRadio = new QRadioButton(QStringLiteral("تيربو من تريديا"));
 	turboRadio->setObjectName("trediaOptionTitle");
 	turboLayout->addWidget(turboRadio);
-	turboLayout->addWidget(wrapLabel(QStringLiteral("ننصح فيه. جهازك يرسل بث واحد لتريديا، وسيرفراتنا توصله لكل منصاتك. "
-							"أخف على جهازك وشبكتك، ومعه الشات الموحد والتقرير."),
+	turboLayout->addWidget(wrapLabel(QStringLiteral("ننصح فيه: جهازك يرسل بث واحد، وتريديا توصله لكل المنصات. أخف على جهازك وشبكتك."),
 					 "trediaMuted"));
 	turboCard->installEventFilter(new CardClick(turboCard, [this]() { turboRadio->setChecked(true); }));
 	layout->addWidget(turboCard);
@@ -343,12 +353,11 @@ void TrediaDock::buildSignedIn(QWidget *page)
 	localCard->setObjectName("trediaOption");
 	auto *localLayout = new QVBoxLayout(localCard);
 	localLayout->setContentsMargins(12, 10, 12, 12);
-	localLayout->setSpacing(6);
+	localLayout->setSpacing(4);
 	localRadio = new QRadioButton(QStringLiteral("من جهازك"));
 	localRadio->setObjectName("trediaOptionTitle");
 	localLayout->addWidget(localRadio);
-	localLayout->addWidget(wrapLabel(QStringLiteral("تبث لأكثر من جهة من جهازك مباشرة، بدون تريديا."), "trediaMuted"));
-	localLayout->addWidget(wrapLabel(warningText, "trediaWarning"));
+	localLayout->addWidget(wrapLabel(warningText, "trediaMuted"));
 	localCard->installEventFilter(new CardClick(localCard, [this]() { localRadio->setChecked(true); }));
 	layout->addWidget(localCard);
 
@@ -364,17 +373,24 @@ void TrediaDock::buildSignedIn(QWidget *page)
 	auto *platformsBox = new QVBoxLayout(platforms);
 	platformsBox->setContentsMargins(0, 6, 0, 0);
 	platformsBox->setSpacing(6);
-	platformsBox->addWidget(heading(QStringLiteral("منصاتك في هذا البث")));
+	auto *platformsHead = new QHBoxLayout;
+	platformsHead->setSpacing(6);
+	platformsHead->addWidget(heading(QStringLiteral("منصاتك في هذا البث")), 1);
+	auto *manage = new QPushButton(QStringLiteral("إدارة"));
+	manage->setFlat(true);
+	manage->setToolTip(QStringLiteral("أضف منصة أو اربط حساب في تريديا"));
+	connect(manage, &QPushButton::clicked, this, [this]() { openUrl(api->baseUrl() + QStringLiteral("/live")); });
+	platformsHead->addWidget(manage);
+	platformsBox->addLayout(platformsHead);
 	destinationsBox = new QVBoxLayout;
 	destinationsBox->setSpacing(6);
 	platformsBox->addLayout(destinationsBox);
 	turboNote = wrapLabel(QString(), "trediaMuted");
 	platformsBox->addWidget(turboNote);
-	auto *manage = new QPushButton(QStringLiteral("أضف منصة أو اربط حساب"));
-	manage->setFlat(true);
-	connect(manage, &QPushButton::clicked, this, [this]() { openUrl(api->baseUrl() + QStringLiteral("/live")); });
-	platformsBox->addWidget(manage, 0, Qt::AlignLeading);
 	layout->addWidget(platforms);
+
+	/* The stream's title, game and description, as in Tredia's own studio. */
+	buildStreamInfo(layout);
 
 	/* Turbo: what Tredia is doing with the stream */
 	turboPanel = new QWidget;
@@ -461,8 +477,8 @@ void TrediaDock::buildSignedIn(QWidget *page)
 
 	/* Overlays */
 	layout->addSpacing(6);
-	layout->addWidget(heading(QStringLiteral("إضافات البث")));
-	layout->addWidget(wrapLabel(QStringLiteral("الشات والتنبيهات وعدّاد المشاهدين، جاهزة على مشهدك."), "trediaMuted"));
+	layout->addWidget(heading(QStringLiteral("تنبيهات وشات تريديا")));
+	layout->addWidget(wrapLabel(QStringLiteral("نفس نظام تنبيهات تريديا، على مشهدك مباشرة: الشات والتنبيهات وعدّاد المشاهدين."), "trediaMuted"));
 	auto *overlays = new QPushButton(QStringLiteral("أضفها لمشهدك"));
 	connect(overlays, &QPushButton::clicked, this, &TrediaDock::addOverlays);
 	layout->addWidget(overlays);
@@ -540,6 +556,7 @@ void TrediaDock::refreshLive()
 		const bool first = liveInfo.isEmpty();
 		liveInfo = data;
 		renderDestinations();
+		loadStreamInfo();
 		reportButton->setEnabled(!data.value(QStringLiteral("lastSession")).toObject().isEmpty());
 
 		const QJsonObject session = data.value(QStringLiteral("session")).toObject();
@@ -596,8 +613,34 @@ void TrediaDock::renderDestinations()
 		names->addWidget(label);
 		names->addWidget(wrapLabel(platformName(platform), "trediaMuted"));
 		h->addLayout(names, 1);
+		if (vertical && vertical->enabled()) {
+			/* Which picture this platform gets: one stream each, horizontal or vertical (saved on Tredia, so
+			 * Turbo and the website follow it too). */
+			const QString destId = d.value(QStringLiteral("id")).toString();
+			const bool tall = d.value(QStringLiteral("orientation")).toString() == QStringLiteral("vertical");
+			auto *shape = new QPushButton(tall ? QStringLiteral("عمودي") : QStringLiteral("أفقي"));
+			shape->setObjectName("trediaOrientation");
+			shape->setProperty("vertical", tall);
+			shape->setToolTip(QStringLiteral("الصورة اللي توصل هذي المنصة: بث واحد بالشكل اللي تختاره"));
+			shape->setCursor(Qt::PointingHandCursor);
+			shape->setEnabled(!obs_frontend_streaming_active());
+			connect(shape, &QPushButton::clicked, this, [this, destId, tall, shape]() {
+				shape->setEnabled(false);
+				QJsonObject body;
+				body.insert(QStringLiteral("id"), destId);
+				body.insert(QStringLiteral("orientation"), tall ? QStringLiteral("horizontal") : QStringLiteral("vertical"));
+				api->post(QStringLiteral("/api/app/live/destinations"), body, [this](const QJsonObject &, int, const QString &error) {
+					if (!error.isEmpty())
+						turboNote->setText(error);
+					refreshLive(); /* drawn again from what Tredia saved */
+				});
+			});
+			h->addWidget(shape);
+		}
 		auto *box = new QCheckBox;
-		box->setToolTip(QStringLiteral("يبث على هذي المنصة"));
+		box->setObjectName("trediaSwitch"); /* drawn as a switch, as in Tredia's own studio */
+		box->setToolTip(QStringLiteral("البث على %1").arg(d.value(QStringLiteral("label")).toString()));
+		box->setAccessibleName(box->toolTip());
 		box->setChecked(d.value(QStringLiteral("enabled")).toBool());
 		h->addWidget(box);
 		row->installEventFilter(new CardClick(row, [box]() {
@@ -629,7 +672,48 @@ void TrediaDock::renderDestinations()
 		});
 		destinationsBox->addWidget(row);
 	}
+	if (vertical && vertical->enabled() && !dests.isEmpty())
+		destinationsBox->addWidget(wrapLabel(QStringLiteral("كل منصة توصلها صورة وحدة: اضغط «أفقي» أو «عمودي» جنبها عشان تختار. "
+							    "ما نرسل العمودي إلا إذا فيه منصة تحتاجه."),
+						     "trediaMuted"));
 	updateNote();
+}
+
+/* Whether this stream needs the vertical picture: it's on, and a ticked platform is set to vertical. */
+bool TrediaDock::wantsVertical() const
+{
+	if (!vertical || !vertical->enabled())
+		return false;
+	for (const QJsonValue &v : liveInfo.value(QStringLiteral("destinations")).toArray()) {
+		const QJsonObject d = v.toObject();
+		if (d.value(QStringLiteral("enabled")).toBool() && d.value(QStringLiteral("orientation")).toString() == QStringLiteral("vertical"))
+			return true;
+	}
+	return false;
+}
+
+/* Turbo: platforms set to vertical get it through Tredia too, as a second stream on the same key
+ * ("<key>-vertical"), the way Tredia's own studio sends it. */
+void TrediaDock::startVertical()
+{
+	if (!wantsVertical())
+		return;
+	const QJsonObject ingest = liveInfo.value(QStringLiteral("ingest")).toObject();
+	const QString server = ingest.value(QStringLiteral("server")).toString();
+	const QString key = ingest.value(QStringLiteral("key")).toString();
+	if (server.isEmpty() || key.isEmpty())
+		return;
+	LocalTarget t;
+	t.id = QStringLiteral("turbo-vertical");
+	t.name = QStringLiteral("تريديا · عمودي");
+	t.server = server;
+	t.key = key + QStringLiteral("-vertical");
+	t.vertical = true;
+	multi->setSiteTargets({t});
+	QString error;
+	multi->startAll(error, vertical ? vertical->video() : nullptr, false);
+	if (!error.isEmpty())
+		turboNote->setText(error);
 }
 
 void TrediaDock::updateNote()
@@ -642,6 +726,203 @@ void TrediaDock::updateNote()
 	const QJsonValue max = liveInfo.value(QStringLiteral("maxPlatforms"));
 	turboNote->setText(max.isNull() ? QStringLiteral("باقتك تبث على كل المنصات مع بعض.")
 					: QStringLiteral("باقتك تبث على %1 منصات مع بعض. تبي أكثر؟ رقّ باقتك من الموقع.").arg(max.toInt()));
+}
+
+/* ---- Stream info: title, game (Twitch, Kick), description (YouTube) ------------------------------- */
+
+namespace {
+
+/* A result line under a form: green when it worked, red when it didn't. */
+void setMessage(QLabel *label, const QString &text, bool error)
+{
+	label->setObjectName(error ? "trediaError" : "trediaOk");
+	label->style()->unpolish(label);
+	label->style()->polish(label);
+	label->setText(text);
+	label->setVisible(!text.isEmpty());
+}
+
+QString categoryName(const QJsonObject &info)
+{
+	return info.value(QStringLiteral("category")).toObject().value(QStringLiteral("name")).toString();
+}
+
+} // namespace
+
+void TrediaDock::buildStreamInfo(QVBoxLayout *layout)
+{
+	layout->addSpacing(6);
+	layout->addWidget(heading(QStringLiteral("معلومات البث")));
+
+	layout->addWidget(wrapLabel(QStringLiteral("العنوان"), "trediaField"));
+	infoTitle = new QLineEdit;
+	infoTitle->setMaxLength(140);
+	infoTitle->setPlaceholderText(QStringLiteral("بث مباشر"));
+	layout->addWidget(infoTitle);
+
+	/* The game: names suggested from Twitch's and Kick's own lists as you type. */
+	layout->addWidget(wrapLabel(QStringLiteral("اللعبة"), "trediaField"));
+	infoGame = new QLineEdit;
+	infoGame->setMaxLength(100);
+	infoGame->setPlaceholderText(QStringLiteral("اكتب اسم اللعبة"));
+	gameModel = new QStringListModel(this);
+	gameCompleter = new QCompleter(gameModel, this);
+	gameCompleter->setCompletionMode(QCompleter::UnfilteredPopupCompletion);
+	gameCompleter->setCaseSensitivity(Qt::CaseInsensitive);
+	gameCompleter->setMaxVisibleItems(8);
+	infoGame->setCompleter(gameCompleter);
+	layout->addWidget(infoGame);
+	layout->addWidget(wrapLabel(QStringLiteral("تتغيّر في تويتش وكيك. يوتيوب ما يسمح بتغيير اللعبة من خارج يوتيوب."), "trediaMuted"));
+
+	layout->addWidget(wrapLabel(QStringLiteral("الوصف (يوتيوب)"), "trediaField"));
+	infoDescription = new QPlainTextEdit;
+	infoDescription->setFixedHeight(88);
+	infoDescription->setTabChangesFocus(true);
+	layout->addWidget(infoDescription);
+
+	infoMessage = wrapLabel(QString(), "trediaOk");
+	infoMessage->setVisible(false);
+	layout->addWidget(infoMessage);
+
+	infoSave = new QPushButton(QStringLiteral("احفظ"));
+	infoSave->setObjectName("trediaPrimary");
+	layout->addWidget(infoSave);
+
+	gameSearch.setSingleShot(true);
+	gameSearch.setInterval(300);
+	connect(&gameSearch, &QTimer::timeout, this, &TrediaDock::searchGames);
+	connect(infoGame, &QLineEdit::textEdited, this, [this]() { gameSearch.start(); });
+	connect(infoTitle, &QLineEdit::textChanged, this, &TrediaDock::updateInfoButton);
+	connect(infoGame, &QLineEdit::textChanged, this, &TrediaDock::updateInfoButton);
+	connect(infoDescription, &QPlainTextEdit::textChanged, this, [this]() {
+		/* YouTube takes 5000 characters; the rest is room for Tredia's own line. */
+		const QString text = infoDescription->toPlainText();
+		if (text.size() > 4900) {
+			QSignalBlocker block(infoDescription);
+			infoDescription->setPlainText(text.left(4900));
+			infoDescription->moveCursor(QTextCursor::End);
+		}
+		updateInfoButton();
+	});
+	connect(infoSave, &QPushButton::clicked, this, &TrediaDock::saveStreamInfo);
+	updateInfoButton();
+}
+
+/* Filled once from Tredia; after that the fields are yours (a refresh never overwrites your typing). */
+void TrediaDock::loadStreamInfo()
+{
+	const QJsonValue info = liveInfo.value(QStringLiteral("info"));
+	if (infoLoaded || !info.isObject())
+		return;
+	infoLoaded = true;
+	savedInfo = info.toObject();
+	{
+		QSignalBlocker a(infoTitle), b(infoGame), c(infoDescription);
+		infoTitle->setText(savedInfo.value(QStringLiteral("title")).toString());
+		infoGame->setText(categoryName(savedInfo));
+		infoDescription->setPlainText(savedInfo.value(QStringLiteral("description")).toString());
+	}
+	updateInfoButton();
+}
+
+void TrediaDock::updateInfoButton()
+{
+	const QString title = infoTitle->text().trimmed();
+	const bool changed = title != savedInfo.value(QStringLiteral("title")).toString() ||
+			     infoDescription->toPlainText().trimmed() != savedInfo.value(QStringLiteral("description")).toString() ||
+			     infoGame->text().trimmed() != categoryName(savedInfo);
+	const bool live = obs_frontend_streaming_active();
+	infoSave->setText(infoSaving ? QStringLiteral("نحفظ…") : live ? QStringLiteral("طبّق على البث الحين") : QStringLiteral("احفظ"));
+	infoSave->setEnabled(!infoSaving && infoLoaded && !title.isEmpty() && changed);
+}
+
+void TrediaDock::searchGames()
+{
+	const QString q = infoGame->text().trimmed();
+	if (q.size() < 2 || gameResults.contains(q))
+		return;
+	const QString path = QStringLiteral("/api/app/live/categories?q=") + QString::fromUtf8(QUrl::toPercentEncoding(q));
+	api->get(path, [this, q](const QJsonObject &data, int, const QString &error) {
+		if (!error.isEmpty() || infoGame->text().trimmed() != q)
+			return;
+		QStringList names;
+		for (const QJsonValue &v : data.value(QStringLiteral("results")).toArray()) {
+			QJsonObject game = v.toObject();
+			const QString name = game.value(QStringLiteral("name")).toString();
+			if (name.isEmpty() || names.contains(name))
+				continue;
+			game.remove(QStringLiteral("image"));
+			gameResults.insert(name, game);
+			names << name;
+		}
+		gameModel->setStringList(names);
+		if (!names.isEmpty() && infoGame->hasFocus())
+			gameCompleter->complete();
+	});
+}
+
+/* Saved on Tredia and put on the platforms straight away, even mid-stream: the title everywhere, the
+ * game on Twitch and Kick, the description on YouTube. */
+void TrediaDock::saveStreamInfo()
+{
+	const QString title = infoTitle->text().trimmed();
+	if (title.isEmpty() || infoSaving)
+		return;
+	const QString typed = infoGame->text().trimmed();
+	const QJsonObject savedCategory = savedInfo.value(QStringLiteral("category")).toObject();
+	QJsonObject body;
+	body.insert(QStringLiteral("title"), title);
+	body.insert(QStringLiteral("description"), infoDescription->toPlainText().trimmed());
+	if (typed.isEmpty())
+		body.insert(QStringLiteral("category"), QJsonValue::Null);
+	else if (gameResults.contains(typed))
+		body.insert(QStringLiteral("category"), gameResults.value(typed));
+	else if (savedCategory.value(QStringLiteral("name")).toString() == typed)
+		body.insert(QStringLiteral("category"), savedCategory);
+	else
+		body.insert(QStringLiteral("category"), QJsonObject{{QStringLiteral("name"), typed}});
+
+	infoSaving = true;
+	infoMessage->setVisible(false);
+	updateInfoButton();
+	api->post(QStringLiteral("/api/app/live/info"), body, [this, body](const QJsonObject &data, int, const QString &error) {
+		infoSaving = false;
+		if (!error.isEmpty()) {
+			setMessage(infoMessage, error, true);
+			updateInfoButton();
+			return;
+		}
+		const QJsonValue category = data.value(QStringLiteral("category"));
+		savedInfo = QJsonObject{{QStringLiteral("title"), body.value(QStringLiteral("title"))},
+					{QStringLiteral("description"), body.value(QStringLiteral("description"))},
+					{QStringLiteral("category"), category}};
+		{
+			QSignalBlocker block(infoGame);
+			infoGame->setText(categoryName(savedInfo));
+		}
+		const QJsonObject found = category.toObject();
+		const QString notFound = body.value(QStringLiteral("category")).isObject() && !found.contains(QStringLiteral("twitch")) &&
+							 !found.contains(QStringLiteral("kick"))
+						 ? QStringLiteral(" ما لقينا اللعبة في تويتش أو كيك: اختر من الاقتراحات.")
+						 : QString();
+		QStringList failed;
+		for (const QJsonValue &v : data.value(QStringLiteral("failed")).toArray()) {
+			const QJsonObject f = v.toObject();
+			failed << QStringLiteral("%1 (%2)").arg(f.value(QStringLiteral("label")).toString(), f.value(QStringLiteral("error")).toString());
+		}
+		QStringList applied;
+		for (const QJsonValue &v : data.value(QStringLiteral("applied")).toArray())
+			applied << v.toString();
+		if (!failed.isEmpty())
+			setMessage(infoMessage, QStringLiteral("انحفظ، بس ما تغيّر في: %1.%2").arg(failed.join(QStringLiteral("، ")), notFound), true);
+		else
+			setMessage(infoMessage,
+				   (applied.isEmpty() ? QStringLiteral("انحفظ، وينطبق أول ما تبث.")
+						      : QStringLiteral("تغيّر في %1.").arg(applied.join(QStringLiteral(" و")))) +
+					   notFound,
+				   false);
+		updateInfoButton();
+	});
 }
 
 void TrediaDock::renderLocalTargets()
@@ -809,6 +1090,9 @@ void TrediaDock::goLive()
 {
 	if (obs_frontend_streaming_active())
 		return;
+	/* The vertical picture follows the main video's frame rate before anything is sent. */
+	if (vertical)
+		vertical->prepare();
 	if (turbo || !api->signedIn()) {
 		if (turbo)
 			applyTurboService();
@@ -826,6 +1110,7 @@ void TrediaDock::goLive()
 			return;
 		}
 		QList<LocalTarget> site;
+		const bool verticalOn = vertical && vertical->enabled();
 		for (const QJsonValue &v : data.value(QStringLiteral("targets")).toArray()) {
 			const QJsonObject o = v.toObject();
 			LocalTarget t;
@@ -833,6 +1118,8 @@ void TrediaDock::goLive()
 			t.name = platformName(o.value(QStringLiteral("platform")).toString());
 			t.server = o.value(QStringLiteral("server")).toString();
 			t.key = o.value(QStringLiteral("key")).toString();
+			/* Each platform gets the picture it's set to (the vertical one only while it's on). */
+			t.vertical = verticalOn && o.value(QStringLiteral("orientation")).toString() == QStringLiteral("vertical");
 			if (!t.server.isEmpty() && !t.key.isEmpty())
 				site.append(t);
 		}
@@ -863,7 +1150,19 @@ void TrediaDock::goLive()
 				obs_data_release(s);
 			}
 		}
-		const LocalTarget first = site.takeFirst();
+		/* The main stream is the first horizontal platform; vertical ones go out alongside it. */
+		qsizetype mainIndex = -1;
+		for (qsizetype i = 0; i < site.size(); i++) {
+			if (!site[i].vertical) {
+				mainIndex = i;
+				break;
+			}
+		}
+		if (mainIndex < 0) {
+			turboNote->setText(QStringLiteral("البث من جهازك يحتاج منصة أفقية وحدة على الأقل. أو بث عن طريق تيربو."));
+			return;
+		}
+		const LocalTarget first = site.takeAt(mainIndex);
 		obs_data_t *settings = obs_data_create();
 		obs_data_set_string(settings, "server", first.server.toUtf8().constData());
 		obs_data_set_string(settings, "key", first.key.toUtf8().constData());
@@ -1085,13 +1384,16 @@ void TrediaDock::handleEvent(enum obs_frontend_event event)
 {
 	switch (event) {
 	case OBS_FRONTEND_EVENT_STREAMING_STARTED:
+		updateInfoButton(); /* "طبّق على البث الحين" while live */
+		renderDestinations(); /* no switching a platform's picture mid-stream */
 		if (turbo) {
 			if (api->signedIn())
 				livePoll.start();
+			startVertical();
 			QTimer::singleShot(3000, this, &TrediaDock::refreshLive);
 		} else {
 			QString error;
-			multi->startAll(error);
+			multi->startAll(error, vertical ? vertical->video() : nullptr);
 			if (!error.isEmpty())
 				localError->setText(error);
 		}
@@ -1100,6 +1402,8 @@ void TrediaDock::handleEvent(enum obs_frontend_event event)
 		multi->stopAll();
 		break;
 	case OBS_FRONTEND_EVENT_STREAMING_STOPPED:
+		updateInfoButton();
+		renderDestinations();
 		livePoll.stop();
 		liveStatus->setVisible(false);
 		restoreAfterDirect();

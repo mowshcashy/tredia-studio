@@ -20,6 +20,12 @@ target_sources(
     multi-output.hpp
     top-bar.cpp
     top-bar.hpp
+    main-window.cpp
+    main-window.hpp
+    vertical.cpp
+    vertical.hpp
+    vertical-preview.cpp
+    vertical-preview.hpp
     secure-store.cpp
     secure-store.hpp
 )
