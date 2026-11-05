@@ -32,6 +32,8 @@
 !COPYING
 !INSTALL
 !README.rst
+!README.md
+!/installer
 
 # Exclude lock files
 *.lock.json
