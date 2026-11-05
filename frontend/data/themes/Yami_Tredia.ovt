@@ -1,12 +1,13 @@
 /* ------------------------------------------------------------------------- *
- * Tredia Studio: the default look.                                          *
- * Tredia's plum, darkened for a studio: panels are rounded cards floating   *
- * on a near-black stage, purple is the one accent, pink means "you're live".*
+ * Tredia Studio, dark. The same design language as tredia.cloud: rounded    *
+ * cards floating on the "stage" plum, one purple accent, pink for live.     *
+ * Every rule below uses the --tr_* colours, so the light theme              *
+ * (Yami_Tredia_Light.ovt) only swaps colours and icons.                     *
  * Built on Yami (OBS Studio's theme).                                       *
  * ------------------------------------------------------------------------- */
 
 @OBSThemeMeta {
-    name: 'Tredia';
+    name: 'Tredia (داكن)';
     id: 'com.tredia.Studio';
     extends: 'com.obsproject.Yami';
     author: 'Tredia';
@@ -14,100 +15,123 @@
 }
 
 @OBSThemeVars {
-    /* Plum scale, darkest last. Yami's rules use these directly. */
-    --grey1: #66568A;
-    --grey2: #4D3F69;
-    --grey3: #3A2E53;
-    --grey4: #2B2140;
-    --grey5: #211833;
-    --grey6: #171026;
-    --grey7: #100B1B;
-    --grey8: #0A0712;
+    /* tredia.cloud's stage colours */
+    --tr_window: #100822;
+    --tr_preview: #0A0515;
+    --tr_card: #1C1236;
+    --tr_card_line: #2D263D;
+    --tr_raised: #241A40;
+    --tr_raised_line: #3A2F57;
+    --tr_hover: #2C2150;
+    --tr_text: #F5F1FF;
+    --tr_muted: #A99FC9;
+    --tr_faint: #6E6390;
+    --tr_accent: #7B4CE0;
+    --tr_accent_hover: #8C64EC;
+    --tr_accent_ink: #FFFFFF;
+    --tr_link: #B9A0F7;
+    --tr_select: #2C1D4A;
+    --tr_select_line: #7B4CE0;
+    --tr_live: #E0479E;
+    --tr_live_hover: #EA62AC;
+    --tr_live_soft: rgba(224, 71, 158, 0.12);
+    --tr_rec: #D3364C;
+    --tr_rec_hover: #E0505F;
+    --tr_warn_bg: rgba(242, 180, 65, 0.08);
+    --tr_warn_line: rgba(242, 180, 65, 0.40);
+    --tr_warn_text: #F6CF7E;
+    --tr_meter_bg: #2C1D4A;
+    --tr_meter: #8C64EC;
 
-    /* Tredia purple */
+    /* Yami's own scale, mapped onto them */
+    --grey1: #6E6390;
+    --grey2: #4D3F6E;
+    --grey3: #3A2F57;
+    --grey4: #2C2150;
+    --grey5: #241A40;
+    --grey6: #1C1236;
+    --grey7: #140B2A;
+    --grey8: #0A0515;
+
     --purple1: #CBB8FA;
-    --purple2: #A78BF2;
+    --purple2: #B9A0F7;
     --purple3: #8C64EC;
     --purple4: #7B4CE0;
     --purple5: #5C33B8;
     --purple6: #2C1D4A;
 
-    /* OBS's blues become Tredia purples, so no leftover blue shows anywhere */
-    --blue1: #A78BF2;
+    --blue1: #B9A0F7;
     --blue2: #8C64EC;
     --blue3: #7B4CE0;
     --blue4: #5C33B8;
     --blue5: #3A2470;
     --blue6: #2C1D4A;
 
-    /* Live pink and recording red */
-    --pink1: #F57DBE;
-    --pink2: #E8459B;
-    --pink3: #C42E80;
-    --rec1: #F0767A;
-    --rec2: #E5484D;
+    --pink1: #EA62AC;
+    --pink2: #E0479E;
+    --pink3: #C42E84;
 
-    --bg_window: var(--grey8);
-    --bg_base: var(--grey6);
-    --bg_preview: var(--grey8);
+    --bg_window: var(--tr_window);
+    --bg_base: var(--tr_card);
+    --bg_preview: var(--tr_preview);
 
-    --primary: var(--purple4);
-    --primary_light: var(--purple3);
-    --primary_lighter: var(--purple2);
+    --primary: var(--tr_accent);
+    --primary_light: var(--tr_accent_hover);
+    --primary_lighter: var(--tr_link);
     --primary_dark: var(--purple5);
     --primary_darker: var(--purple6);
 
-    --text: #F4EFFC;
-    --text_light: #FFFFFF;
-    --text_muted: #A597BF;
-    --text_disabled: #6E6288;
-    --highlight_color: var(--purple3);
+    --text: var(--tr_text);
+    --text_light: var(--tr_text);
+    --text_muted: var(--tr_muted);
+    --text_disabled: var(--tr_faint);
+    --highlight_color: var(--tr_accent_hover);
 
     /* One step bigger than OBS: Arabic needs the room. */
     --font_base_value: calc(var(--obsFontScale) + 1);
 
-    --border_color: #251B37;
-    --border_radius: 8px;
-    --border_radius_small: 6px;
-    --border_radius_large: 14px;
+    --border_color: var(--tr_card_line);
+    --border_radius: 10px;
+    --border_radius_small: 7px;
+    --border_radius_large: 18px;
 
-    --input_bg: var(--grey5);
-    --input_bg_hover: var(--grey4);
-    --input_bg_focus: var(--grey7);
-    --input_border: var(--grey3);
+    --input_bg: var(--tr_raised);
+    --input_bg_hover: var(--tr_hover);
+    --input_bg_focus: var(--tr_raised);
+    --input_border: var(--tr_raised_line);
     --input_border_hover: var(--grey1);
-    --input_border_focus: var(--purple3);
+    --input_border_focus: var(--tr_accent);
 
-    --list_item_bg_selected: var(--purple6);
-    --list_item_bg_hover: var(--grey4);
+    --list_item_bg_selected: var(--tr_select);
+    --list_item_bg_hover: var(--tr_hover);
 
-    --button_bg: var(--grey5);
-    --button_bg_hover: var(--grey4);
-    --button_bg_down: var(--grey7);
-    --button_bg_disabled: var(--grey6);
-    --button_border: var(--grey3);
+    --button_bg: var(--tr_raised);
+    --button_bg_hover: var(--tr_hover);
+    --button_bg_down: var(--tr_card);
+    --button_bg_disabled: var(--tr_card);
+    --button_border: var(--tr_raised_line);
     --button_border_hover: var(--grey1);
-    --button_border_focus: var(--purple3);
+    --button_border_focus: var(--tr_accent);
 
-    --tab_bg: var(--grey6);
-    --tab_bg_hover: var(--grey4);
-    --tab_bg_down: var(--purple6);
-    --tab_border: var(--grey3);
-    --tab_border_selected: var(--purple4);
-    --tab_border_focus: var(--purple3);
+    --tab_bg: var(--tr_card);
+    --tab_bg_hover: var(--tr_hover);
+    --tab_bg_down: var(--tr_select);
+    --tab_border: var(--tr_raised_line);
+    --tab_border_selected: var(--tr_accent);
+    --tab_border_focus: var(--tr_accent_hover);
 
     --scrollbar_size: 8px;
-    --scrollbar_handle: var(--grey3);
+    --scrollbar_handle: var(--tr_raised_line);
     --scrollbar_bg: transparent;
     --scrollbar_hover: var(--grey1);
-    --scrollbar_down: var(--purple4);
+    --scrollbar_down: var(--tr_accent);
     --scrollbar_border: transparent;
 
-    --separator_hover: var(--purple5);
+    --separator_hover: var(--tr_accent);
 
-    --palette_highlight: var(--purple4);
-    --palette_link: var(--purple2);
-    --palette_linkVisited: var(--purple2);
+    --palette_highlight: var(--tr_accent);
+    --palette_link: var(--tr_link);
+    --palette_linkVisited: var(--tr_link);
 }
 
 /* ---- Type ------------------------------------------------------------------------------------- */
@@ -121,7 +145,7 @@ QWidget {
 QMainWindow,
 QStatusBar,
 QMenuBar {
-    background-color: var(--bg_window);
+    background-color: var(--tr_window);
 }
 
 QMainWindow::separator {
@@ -132,7 +156,7 @@ QMainWindow::separator {
 }
 
 QMainWindow::separator:hover {
-    background: var(--purple6);
+    background: var(--tr_select);
     border: none;
     margin: 3px;
 }
@@ -140,62 +164,63 @@ QMainWindow::separator:hover {
 QDockWidget {
     font-size: var(--font_base);
     font-weight: 600;
-    color: var(--text);
+    color: var(--tr_text);
+    titlebar-close-icon: url(theme:Tredia/close.svg);
+    titlebar-normal-icon: url(theme:Tredia/popout.svg);
 }
 
 QDockWidget::title {
-    background-color: var(--bg_base);
-    border: 1px solid var(--border_color);
+    background-color: var(--tr_card);
+    border: 1px solid var(--tr_card_line);
     border-bottom: none;
     border-top-left-radius: var(--border_radius_large);
     border-top-right-radius: var(--border_radius_large);
-    padding: 9px 14px 5px 14px;
+    padding: 10px 16px 6px 16px;
 }
 
 QDockWidget::close-button,
 QDockWidget::float-button {
-    border-radius: 6px;
+    border-radius: 7px;
     padding: 3px;
-    margin: 4px 2px 0px 2px;
+    margin: 5px 3px 0px 3px;
 }
 
 QDockWidget::close-button:hover,
 QDockWidget::float-button:hover {
-    background: var(--grey4);
+    background: var(--tr_hover);
 }
 
 OBSDock > QWidget {
-    background: var(--bg_base);
-    border: 1px solid var(--border_color);
+    background: var(--tr_card);
+    border: 1px solid var(--tr_card_line);
     border-top: none;
     border-bottom-left-radius: var(--border_radius_large);
     border-bottom-right-radius: var(--border_radius_large);
 }
 
 OBSDock QToolBar {
-    border-top: 1px solid var(--border_color);
-    padding: 3px 6px;
-    height: 36px;
-    max-height: 36px;
+    border-top: 1px solid var(--tr_card_line);
+    padding: 3px 8px;
+    height: 38px;
+    max-height: 38px;
 }
 
 OBSDock QToolBar QToolButton {
     border: 1px solid transparent;
-    border-radius: 8px;
+    border-radius: 9px;
 }
 
 OBSDock QToolBar QToolButton:hover {
-    background: var(--grey4);
+    background: var(--tr_hover);
     border-color: transparent;
 }
 
 QAbstractItemView {
-    background-color: var(--bg_base);
+    background-color: var(--tr_card);
 }
 
-/* The preview blends into the stage */
 OBSQTDisplay {
-    qproperty-displayBackgroundColor: var(--bg_window);
+    qproperty-displayBackgroundColor: var(--tr_preview);
 }
 
 /* ---- Lists: scenes, sources ------------------------------------------------------------------- */
@@ -205,44 +230,47 @@ QListWidget {
     padding: 6px;
 }
 
-/* Only the scenes list gets inner padding: the sources list places a widget in each row, and padding there clips it. */
+/* Only the scenes list gets inner padding: the sources list places a widget in each row, and padding
+ * there clips it. */
 QListWidget::item {
     padding: 6px 10px;
 }
 
 QListView::item,
-QListWidget::item {
-    border-radius: 9px;
-}
-
-/* Source rows keep OBS's padding: their height is fixed, and more padding clips Arabic letters. */
+QListWidget::item,
 SourceTreeItem {
-    border-radius: 9px;
+    border-radius: 10px;
 }
 
 QListView::item:hover,
 QListWidget::item:hover {
-    background: var(--grey5);
+    background: var(--tr_hover);
     border: 1px solid transparent;
 }
 
 QListView::item:selected,
 QListWidget::item:selected {
-    background-color: var(--purple6);
-    border: 1px solid var(--purple4);
+    background-color: var(--tr_select);
+    border: 1px solid var(--tr_select_line);
+    color: var(--tr_text);
 }
 
 QListView::item:selected:hover,
 QListWidget::item:selected:hover {
-    background: #36245C;
-    border: 1px solid var(--purple3);
+    background: var(--tr_select);
+    border: 1px solid var(--tr_accent_hover);
 }
 
 QListView::item:focus,
 QListWidget::item:focus,
 QListView::item:selected:focus,
 QListWidget::item:selected:focus {
-    border: 1px solid var(--purple3);
+    border: 1px solid var(--tr_accent_hover);
+}
+
+QListView QLineEdit,
+QListWidget QLineEdit {
+    border: 1px solid var(--tr_accent);
 }
 
 /* ---- Menus and tooltips ----------------------------------------------------------------------- */
@@ -258,12 +286,12 @@ QMenuBar::item {
 }
 
 QMenuBar::item:selected {
-    background: var(--grey4);
+    background: var(--tr_hover);
 }
 
 QMenu {
-    background-color: var(--grey6);
-    border: 1px solid var(--grey3);
+    background-color: var(--tr_card);
+    border: 1px solid var(--tr_raised_line);
     border-radius: 12px;
     padding: 6px;
 }
@@ -274,34 +302,39 @@ QMenu::item {
 }
 
 QMenu::item:selected {
-    background-color: var(--purple6);
-    border-color: var(--purple4);
+    background-color: var(--tr_select);
+    border-color: var(--tr_select_line);
+    color: var(--tr_text);
 }
 
 QMenu::separator {
-    background: var(--grey4);
+    background: var(--tr_card_line);
     margin: 5px 10px;
 }
 
 QToolTip {
-    background-color: var(--grey4);
-    color: var(--text);
-    border: 1px solid var(--grey3);
-    border-radius: 6px;
+    background-color: var(--tr_raised);
+    color: var(--tr_text);
+    border: 1px solid var(--tr_raised_line);
+    border-radius: 7px;
     padding: 5px 8px;
 }
 
-/* ---- Buttons and fields ----------------------------------------------------------------------- */
+/* ---- Buttons, fields, checks ------------------------------------------------------------------ */
 
 QPushButton {
-    border-radius: 10px;
-    padding-left: 14px;
-    padding-right: 14px;
+    border-radius: 13px;
+    padding-left: 16px;
+    padding-right: 16px;
 }
 
 QPushButton:checked {
-    background: var(--purple6);
-    border-color: var(--purple4);
+    background: var(--tr_select);
+    border-color: var(--tr_select_line);
+}
+
+QPushButton:focus {
+    border-color: var(--tr_accent);
 }
 
 QLineEdit,
@@ -313,114 +346,248 @@ QComboBox {
     border-radius: var(--border_radius);
 }
 
+QLineEdit:focus,
+QTextEdit:focus,
+QPlainTextEdit:focus,
+QSpinBox:focus,
+QDoubleSpinBox:focus,
+QComboBox:focus {
+    border-color: var(--tr_accent);
+}
+
+QCheckBox::indicator:unchecked,
+QCheckBox::indicator:unchecked:hover,
+QGroupBox::indicator:unchecked,
+QTableView::indicator:unchecked {
+    image: url(theme:Tredia/checkbox_unchecked.svg);
+}
+
+QCheckBox::indicator:checked,
+QCheckBox::indicator:checked:hover,
+QGroupBox::indicator:checked,
+QTableView::indicator:checked {
+    image: url(theme:Tredia/checkbox_checked.svg);
+}
+
+QRadioButton::indicator {
+    width: 18px;
+    height: 18px;
+}
+
+QRadioButton::indicator:unchecked {
+    image: url(theme:Tredia/radio_unchecked.svg);
+}
+
+QRadioButton::indicator:checked {
+    image: url(theme:Tredia/radio_checked.svg);
+}
+
 QScrollBar::handle {
     border-radius: 4px;
 }
 
 QProgressBar::chunk {
-    background: var(--purple4);
-    border-top: 1px solid var(--purple3);
-    border-bottom: 2px solid var(--purple5);
+    background: var(--tr_accent);
+    border: none;
+    border-radius: 4px;
+}
+
+QSlider::handle:horizontal,
+QSlider::handle:vertical {
+    background-color: var(--tr_text);
+}
+
+QSlider::sub-page:horizontal,
+QSlider::add-page:vertical {
+    background: var(--tr_accent);
 }
 
 /* ---- Source context bar under the preview ----------------------------------------------------- */
 
 #contextContainer {
-    background-color: var(--bg_base);
-    border: 1px solid var(--border_color);
-    border-radius: 12px;
+    background-color: var(--tr_card);
+    border: 1px solid var(--tr_card_line);
+    border-radius: 14px;
     margin-top: 6px;
 }
 
 #contextContainer QPushButton {
-    border-radius: 9px;
+    border-radius: 10px;
 }
 
-/* ---- Controls: go live, record ---------------------------------------------------------------- */
+/* ---- The top bar: logo, live status, go live, record ------------------------------------------ */
 
-#controlsFrame {
-    padding: 8px 10px;
+QToolBar#trediaTopBar {
+    background: var(--tr_card);
+    border: none;
+    border-bottom: 1px solid var(--tr_card_line);
+    padding: 8px 16px;
+    spacing: 8px;
 }
 
-#controlsFrame QPushButton {
-    margin: 3px 2px;
+QToolBar#trediaTopBar QLabel {
+    background: transparent;
+}
+
+QLabel#trediaTopName {
+    font-size: var(--font_large);
+    font-weight: bold;
+    color: var(--tr_text);
+    padding: 0px 6px;
+}
+
+QLabel#trediaStatus {
+    background: var(--tr_raised);
+    border: 1px solid var(--tr_raised_line);
+    border-radius: 15px;
+    padding: 5px 16px;
+    color: var(--tr_muted);
     font-weight: 600;
 }
 
+QLabel#trediaStatus[state="starting"] {
+    color: var(--tr_text);
+    border-color: var(--tr_accent);
+}
+
+QLabel#trediaStatus[state="live"] {
+    background: var(--tr_live);
+    border-color: var(--tr_live);
+    color: #FFFFFF;
+}
+
+QLabel#trediaStatus[state="rec"] {
+    background: var(--tr_rec);
+    border-color: var(--tr_rec);
+    color: #FFFFFF;
+}
+
+QToolBar#trediaTopBar QToolButton {
+    border: 1px solid transparent;
+    border-radius: 11px;
+    padding: 7px;
+    background: transparent;
+}
+
+QToolBar#trediaTopBar QToolButton:hover {
+    background: var(--tr_hover);
+}
+
+QToolBar#trediaTopBar QToolButton:checked {
+    background: var(--tr_select);
+    border-color: var(--tr_select_line);
+}
+
+QToolButton#trediaThemeButton {
+    qproperty-icon: url(theme:Tredia/sun.svg);
+}
+
+QToolButton#trediaStudioButton {
+    qproperty-icon: url(theme:Tredia/studio.svg);
+}
+
+QToolButton#trediaSettingsButton {
+    qproperty-icon: url(theme:Tredia/gear.svg);
+}
+
+QPushButton#trediaGoLive,
+QPushButton#trediaRecord {
+    height: 36px;
+    min-height: 36px;
+    max-height: 36px;
+    border-radius: 18px;
+    padding: 0px 22px;
+    margin: 0px;
+    font-weight: bold;
+}
+
+QPushButton#trediaGoLive {
+    background: var(--tr_live);
+    border: 1px solid var(--tr_live);
+    color: #FFFFFF;
+}
+
+QPushButton#trediaGoLive:hover {
+    background: var(--tr_live_hover);
+    border-color: var(--tr_live_hover);
+}
+
+QPushButton#trediaGoLive[live="true"] {
+    background: var(--tr_text);
+    border-color: var(--tr_text);
+    color: var(--tr_card);
+}
+
+QPushButton#trediaGoLive:disabled {
+    background: var(--tr_raised);
+    border-color: var(--tr_raised_line);
+    color: var(--tr_muted);
+}
+
+QPushButton#trediaRecord {
+    background: var(--tr_raised);
+    border: 1px solid var(--tr_raised_line);
+    color: var(--tr_text);
+}
+
+QPushButton#trediaRecord:hover {
+    background: var(--tr_hover);
+}
+
+QPushButton#trediaRecord[on="true"] {
+    background: var(--tr_rec);
+    border-color: var(--tr_rec);
+    color: #FFFFFF;
+}
+
+/* OBS's own controls dock, for people who turn it back on */
 #streamButton,
 #recordButton,
 #broadcastButton {
-    border-radius: 11px;
+    border-radius: 13px;
     font-weight: bold;
 }
 
 #streamButton:!checked,
 #broadcastButton:!checked {
-    background: qlineargradient(x1: 0, y1: 0, x2: 1, y2: 0, stop: 0 #7B4CE0, stop: 1 #A04CD6);
-    border: 1px solid #8C64EC;
+    background: var(--tr_live);
+    border: 1px solid var(--tr_live);
     color: #FFFFFF;
-}
-
-#streamButton:hover:!checked,
-#broadcastButton:hover:!checked {
-    background: qlineargradient(x1: 0, y1: 0, x2: 1, y2: 0, stop: 0 #8C64EC, stop: 1 #B05AE2);
 }
 
 #streamButton:!hover:!pressed.state-active,
 #broadcastButton:!hover:!pressed.state-active {
-    background: qlineargradient(x1: 0, y1: 0, x2: 1, y2: 0, stop: 0 #E8459B, stop: 1 #F0609F);
-    border-color: var(--pink2);
-    color: #FFFFFF;
-}
-
-#streamButton:hover:!pressed.state-active,
-#broadcastButton:hover:!pressed.state-active {
-    background: var(--pink1);
-    border-color: var(--pink1);
-    color: #FFFFFF;
+    background: var(--tr_text);
+    border-color: var(--tr_text);
+    color: var(--tr_card);
 }
 
 #recordButton:!hover:!pressed.state-active {
-    background: var(--rec2);
-    border-color: var(--rec2);
+    background: var(--tr_rec);
+    border-color: var(--tr_rec);
     color: #FFFFFF;
-}
-
-#recordButton:hover:!pressed.state-active {
-    background: var(--rec1);
-    border-color: var(--rec1);
 }
 
 /* ---- Audio mixer ------------------------------------------------------------------------------ */
 
 VolumeMeter {
-    qproperty-backgroundNominalColor: #2C1D4A;
+    qproperty-backgroundNominalColor: var(--tr_meter_bg);
     qproperty-backgroundWarningColor: #4A3A16;
     qproperty-backgroundErrorColor: #4D1733;
-    qproperty-foregroundNominalColor: #8C64EC;
+    qproperty-foregroundNominalColor: var(--tr_meter);
     qproperty-foregroundWarningColor: #F2B441;
-    qproperty-foregroundErrorColor: #E8459B;
-    qproperty-majorTickColor: var(--text_muted);
-    qproperty-minorTickColor: var(--grey2);
-}
-
-QSlider::sub-page:horizontal,
-QSlider::add-page:vertical {
-    background: var(--purple4);
+    qproperty-foregroundErrorColor: var(--tr_live);
+    qproperty-majorTickColor: var(--tr_muted);
+    qproperty-minorTickColor: var(--tr_faint);
 }
 
 /* ---- Status bar ------------------------------------------------------------------------------- */
 
 QStatusBar {
-    color: var(--text_muted);
+    color: var(--tr_muted);
 }
 
-/* ---- Icons: Tredia's own set (themes/Tredia) ------------------------------------------------- */
-
-QDockWidget {
-    titlebar-close-icon: url(theme:Tredia/close.svg);
-    titlebar-normal-icon: url(theme:Tredia/popout.svg);
-}
+/* ---- Icons: Tredia's own set ------------------------------------------------------------------ */
 
 .icon-plus { qproperty-icon: url(theme:Tredia/plus.svg); }
 .icon-minus { qproperty-icon: url(theme:Tredia/minus.svg); }
@@ -508,12 +675,12 @@ OBSBasic {
 
 #trediaDock QLabel#trediaHeading {
     font-weight: bold;
-    color: var(--text);
+    color: var(--tr_text);
     padding-top: 4px;
 }
 
 #trediaDock QLabel#trediaMuted {
-    color: var(--text_muted);
+    color: var(--tr_muted);
 }
 
 #trediaDock QLabel#trediaRowTitle,
@@ -522,11 +689,11 @@ OBSBasic {
 }
 
 #trediaDock QLabel#trediaError {
-    color: var(--rec1);
+    color: var(--tr_rec);
 }
 
 #trediaDock QLabel#trediaAvatar {
-    background: qlineargradient(x1: 0, y1: 0, x2: 1, y2: 1, stop: 0 #7B4CE0, stop: 1 #E8459B);
+    background: qlineargradient(x1: 0, y1: 0, x2: 1, y2: 1, stop: 0 #7B4CE0, stop: 1 #E0479E);
     color: #FFFFFF;
     border-radius: 20px;
     font-weight: bold;
@@ -536,35 +703,35 @@ OBSBasic {
 #trediaDock QFrame#trediaHeader,
 #trediaDock QFrame#trediaOption,
 #trediaDock QFrame#trediaRow {
-    background: var(--grey5);
-    border: 1px solid var(--grey3);
-    border-radius: 12px;
+    background: var(--tr_raised);
+    border: 1px solid var(--tr_raised_line);
+    border-radius: 14px;
 }
 
 #trediaDock QFrame#trediaOption[selected="true"] {
-    background: var(--purple6);
-    border: 1px solid var(--purple4);
+    background: var(--tr_select);
+    border: 1px solid var(--tr_select_line);
 }
 
 #trediaDock QLabel#trediaWarning {
-    background: rgba(242, 180, 65, 0.08);
-    border: 1px solid rgba(242, 180, 65, 0.40);
-    border-radius: 10px;
+    background: var(--tr_warn_bg);
+    border: 1px solid var(--tr_warn_line);
+    border-radius: 11px;
     padding: 8px 10px;
-    color: #F6CF7E;
+    color: var(--tr_warn_text);
 }
 
 #trediaDock QLabel#trediaLive {
-    background: rgba(232, 69, 155, 0.12);
-    border: 1px solid var(--pink3);
-    border-radius: 10px;
+    background: var(--tr_live_soft);
+    border: 1px solid var(--tr_live);
+    border-radius: 11px;
     padding: 8px 10px;
 }
 
 #trediaDock QLabel#trediaUpdate {
-    background: var(--purple6);
-    border: 1px solid var(--purple5);
-    border-radius: 10px;
+    background: var(--tr_select);
+    border: 1px solid var(--tr_select_line);
+    border-radius: 11px;
     padding: 8px 10px;
 }
 
@@ -575,32 +742,29 @@ OBSBasic {
 }
 
 #trediaDock QPushButton {
-    border-radius: 10px;
+    border-radius: 13px;
 }
 
 #trediaDock QPushButton#trediaPrimary {
-    background: qlineargradient(x1: 0, y1: 0, x2: 1, y2: 0, stop: 0 #7B4CE0, stop: 1 #A04CD6);
-    border: 1px solid #8C64EC;
-    color: #FFFFFF;
+    background: var(--tr_accent);
+    border: 1px solid var(--tr_accent);
+    color: var(--tr_accent_ink);
     font-weight: bold;
 }
 
 #trediaDock QPushButton#trediaPrimary:hover {
-    background: qlineargradient(x1: 0, y1: 0, x2: 1, y2: 0, stop: 0 #8C64EC, stop: 1 #B05AE2);
+    background: var(--tr_accent_hover);
+    border-color: var(--tr_accent_hover);
 }
 
 #trediaDock QPushButton:flat {
     background: transparent;
     border: 1px solid transparent;
-    color: var(--purple2);
+    color: var(--tr_link);
     padding-left: 4px;
     padding-right: 4px;
 }
 
 #trediaDock QPushButton:flat:hover {
-    background: var(--grey4);
-}
-
-#trediaBrand {
-    background: transparent;
+    background: var(--tr_hover);
 }

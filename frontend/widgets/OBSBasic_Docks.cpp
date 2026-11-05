@@ -88,14 +88,12 @@ void OBSBasic::on_resetDocks_triggered(bool force)
 	ui->sourcesDock->setVisible(true);
 	ui->mixerDock->setVisible(true);
 	ui->transitionsDock->setVisible(false);
-	controlsDock->setVisible(true);
+	controlsDock->setVisible(false); /* the Tredia top bar has go live, record, studio mode and settings */
 	statsDock->setVisible(false);
 	statsDock->setFloating(true);
 
-	QList<QDockWidget *> bottomDocks{ui->mixerDock, controlsDock};
-
-	resizeDocks(bottomDocks, {bottomDocksHeight, bottomDocksHeight}, Qt::Vertical);
-	resizeDocks(bottomDocks, {cx * 50 / 100, cx * 18 / 100}, Qt::Horizontal);
+	UNUSED_PARAMETER(cx);
+	resizeDocks({ui->mixerDock}, {bottomDocksHeight * 8 / 10}, Qt::Vertical);
 
 	int sideDockWidth = std::min(width() * 30 / 100, 320);
 	resizeDocks({ui->scenesDock, ui->sourcesDock}, {sideDockWidth, sideDockWidth}, Qt::Horizontal);

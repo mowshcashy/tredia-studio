@@ -404,7 +404,7 @@ void OBSApp::InitUserConfigDefaults()
 	config_set_default_bool(userConfig, "BasicWindow", "StudioModeLabels", true);
 	config_set_default_bool(userConfig, "BasicWindow", "SideDocks", true);
 
-	config_set_default_bool(userConfig, "BasicWindow", "VerticalVolumeControl", true);
+	config_set_default_bool(userConfig, "BasicWindow", "VerticalVolumeControl", false);
 
 	config_set_default_bool(userConfig, "BasicWindow", "MultiviewMouseSwitch", true);
 

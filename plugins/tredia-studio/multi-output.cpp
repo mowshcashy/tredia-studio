@@ -64,7 +64,7 @@ int MultiOutput::startAll(QString &error)
 	}
 
 	int started = 0;
-	for (const LocalTarget &t : list) {
+	for (const LocalTarget &t : siteList + list) {
 		if (!t.enabled || t.server.isEmpty())
 			continue;
 

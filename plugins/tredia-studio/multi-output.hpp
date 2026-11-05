@@ -27,6 +27,10 @@ public:
 	QList<LocalTarget> targets() const { return list; }
 	void setTargets(const QList<LocalTarget> &targets);
 
+	/* The platforms ticked on Tredia, for this stream only (never saved: their keys come fresh from
+	 * Tredia each time you go live). */
+	void setSiteTargets(const QList<LocalTarget> &targets) { siteList = targets; }
+
 	/* Call when the main stream has started / is stopping. Returns how many extra outputs started. */
 	int startAll(QString &error);
 	void stopAll();
@@ -44,6 +48,7 @@ private:
 	};
 
 	QList<LocalTarget> list;
+	QList<LocalTarget> siteList;
 	QList<Running> live;
 
 	void load();

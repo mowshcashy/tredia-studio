@@ -18,6 +18,8 @@ target_sources(
     tredia-dock.hpp
     multi-output.cpp
     multi-output.hpp
+    top-bar.cpp
+    top-bar.hpp
     secure-store.cpp
     secure-store.hpp
 )

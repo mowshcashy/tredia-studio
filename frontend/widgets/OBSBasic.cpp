@@ -59,6 +59,8 @@
 
 #include <QActionGroup>
 #include <QLabel>
+#include <QSignalBlocker>
+#include <utility/OBSTheme.hpp>
 #include <QThread>
 #include <QWidgetAction>
 
@@ -388,14 +390,28 @@ OBSBasic::OBSBasic(QWidget *parent) : OBSMainWindow(parent), undo_s(ui), ui(new 
 	ui->idianPlayground->setVisible(false);
 #endif
 
-	/* Tredia Studio: the logo at the start of the menu bar. */
+	/* Tredia Studio: one click between the light and the dark look (Settings > Appearance lists both too). */
 	{
-		QLabel *brand = new QLabel(ui->menubar);
-		brand->setObjectName("trediaBrand");
-		brand->setPixmap(QIcon(":/res/images/obs.png").pixmap(QSize(22, 22), devicePixelRatioF()));
-		brand->setContentsMargins(12, 0, 8, 0);
-		brand->setToolTip("Tredia Studio");
-		ui->menubar->setCornerWidget(brand, Qt::TopLeftCorner);
+		QAction *dark = new QAction(QTStr("Basic.MainMenu.View.DarkMode"), this);
+		dark->setObjectName("trediaThemeToggle");
+		dark->setCheckable(true);
+		QAction *first = ui->viewMenu->actions().value(0);
+		ui->viewMenu->insertAction(first, dark);
+		if (first)
+			ui->viewMenu->insertSeparator(first);
+		auto sync = [dark]() {
+			const OBSTheme *theme = App()->GetTheme();
+			QSignalBlocker block(dark);
+			dark->setChecked(theme && theme->isDark);
+		};
+		connect(App(), &OBSApp::StyleChanged, dark, sync);
+		connect(dark, &QAction::triggered, this, [](bool on) {
+			const char *id = on ? "com.tredia.Studio" : "com.tredia.Studio.Light";
+			config_set_string(App()->GetUserConfig(), "Appearance", "Theme", id);
+			config_save_safe(App()->GetUserConfig(), "tmp", nullptr);
+			App()->SetTheme(id);
+		});
+		sync();
 	}
 
 	auto addNudge = [this](const QKeySequence &seq, MoveDir direction, int distance) {
@@ -1135,6 +1151,15 @@ void OBSBasic::OBSInit()
 		if (!restoreState(dockState)) {
 			on_resetDocks_triggered(true);
 		}
+	}
+
+	/* Tredia Studio: everyone gets the new layout once (top bar instead of the controls dock,
+	 * a horizontal mixer); after that their own arrangement is kept. */
+	if (config_get_int(App()->GetUserConfig(), "BasicWindow", "TrediaLayout") < 2) {
+		config_set_bool(App()->GetUserConfig(), "BasicWindow", "VerticalVolumeControl", false);
+		on_resetDocks_triggered(true);
+		config_set_int(App()->GetUserConfig(), "BasicWindow", "TrediaLayout", 2);
+		config_save_safe(App()->GetUserConfig(), "tmp", nullptr);
 	}
 
 	bool pre23Defaults = config_get_bool(App()->GetUserConfig(), "General", "Pre23Defaults");

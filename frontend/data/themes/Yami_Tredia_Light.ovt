@@ -1,0 +1,186 @@
+/* ------------------------------------------------------------------------- *
+ * Tredia Studio, light: tredia.cloud's own look. Lavender mist, white       *
+ * cards with a white edge, deep plum ink, the logo purple. Same shapes as   *
+ * the dark theme (it extends it); only colours and icons change here.       *
+ * ------------------------------------------------------------------------- */
+
+@OBSThemeMeta {
+    name: 'Tredia (فاتح)';
+    id: 'com.tredia.Studio.Light';
+    extends: 'com.tredia.Studio';
+    author: 'Tredia';
+    dark: 'false';
+}
+
+@OBSThemeVars {
+    /* tredia.cloud's colours */
+    --tr_window: #ECE7F8;
+    --tr_preview: #E3DCF3;
+    --tr_card: #F8F6FD;
+    --tr_card_line: #E2DAF3;
+    --tr_raised: #FFFFFF;
+    --tr_raised_line: #DDD5EF;
+    --tr_hover: #EFE9FB;
+    --tr_text: #1D1236;
+    --tr_muted: #6F678A;
+    --tr_faint: #A39BBB;
+    --tr_accent: #5B2A9E;
+    --tr_accent_hover: #6A35B5;
+    --tr_accent_ink: #FFFFFF;
+    --tr_link: #5B2A9E;
+    --tr_select: #E7DFF8;
+    --tr_select_line: #B6A2E8;
+    --tr_live: #E0479E;
+    --tr_live_hover: #E862A8;
+    --tr_live_soft: rgba(224, 71, 158, 0.10);
+    --tr_rec: #D3364C;
+    --tr_rec_hover: #DD4C60;
+    --tr_warn_bg: #FFF7E8;
+    --tr_warn_line: #F0CB82;
+    --tr_warn_text: #7A4E00;
+    --tr_meter_bg: #E3DCF3;
+    --tr_meter: #5B2A9E;
+
+    --grey1: #A39BBB;
+    --grey2: #C9BFE3;
+    --grey3: #DDD5EF;
+    --grey4: #EFE9FB;
+    --grey5: #FFFFFF;
+    --grey6: #F8F6FD;
+    --grey7: #ECE7F8;
+    --grey8: #E3DCF3;
+
+    /* Yami draws focus rings and slider handles in "white"; on a light theme they're ink. */
+    --white1: #1D1236;
+    --white2: #3B2D5E;
+    --white3: #5B2A9E;
+    --white4: #6F678A;
+    --white5: #A39BBB;
+
+    --purple1: #5B2A9E;
+    --purple2: #6A35B5;
+    --purple6: #E7DFF8;
+    --blue1: #6A35B5;
+    --blue2: #5B2A9E;
+    --blue6: #E7DFF8;
+}
+
+QDockWidget {
+    titlebar-close-icon: url(theme:TrediaInk/close.svg);
+    titlebar-normal-icon: url(theme:TrediaInk/popout.svg);
+}
+
+QCheckBox::indicator:unchecked,
+QCheckBox::indicator:unchecked:hover,
+QGroupBox::indicator:unchecked,
+QTableView::indicator:unchecked {
+    image: url(theme:TrediaInk/checkbox_unchecked.svg);
+}
+
+QCheckBox::indicator:checked,
+QCheckBox::indicator:checked:hover,
+QGroupBox::indicator:checked,
+QTableView::indicator:checked {
+    image: url(theme:TrediaInk/checkbox_checked.svg);
+}
+
+QRadioButton::indicator:unchecked {
+    image: url(theme:TrediaInk/radio_unchecked.svg);
+}
+
+QRadioButton::indicator:checked {
+    image: url(theme:TrediaInk/radio_checked.svg);
+}
+
+QToolButton#trediaThemeButton {
+    qproperty-icon: url(theme:TrediaInk/moon.svg);
+}
+
+QToolButton#trediaStudioButton {
+    qproperty-icon: url(theme:TrediaInk/studio.svg);
+}
+
+QToolButton#trediaSettingsButton {
+    qproperty-icon: url(theme:TrediaInk/gear.svg);
+}
+
+/* ---- Icons: deep plum, for light backgrounds ------------------------------------------------------------------ */
+
+.icon-plus { qproperty-icon: url(theme:TrediaInk/plus.svg); }
+.icon-minus { qproperty-icon: url(theme:TrediaInk/minus.svg); }
+.icon-trash { qproperty-icon: url(theme:TrediaInk/trash.svg); }
+.icon-gear { qproperty-icon: url(theme:TrediaInk/gear.svg); }
+.icon-dots-vert { qproperty-icon: url(theme:TrediaInk/dots-vert.svg); }
+.icon-refresh { qproperty-icon: url(theme:TrediaInk/refresh.svg); }
+.icon-up { qproperty-icon: url(theme:TrediaInk/up.svg); }
+.icon-down { qproperty-icon: url(theme:TrediaInk/down.svg); }
+.icon-filter { qproperty-icon: url(theme:TrediaInk/filter.svg); }
+.icon-close { qproperty-icon: url(theme:TrediaInk/close.svg); }
+
+QPushButton#sourcePropertiesButton { qproperty-icon: url(theme:TrediaInk/gear.svg); }
+QPushButton#sourceFiltersButton { qproperty-icon: url(theme:TrediaInk/filter.svg); }
+QToolBarExtension { qproperty-icon: url(theme:TrediaInk/dots-vert.svg); }
+
+.btn-mute { qproperty-icon: url(theme:TrediaInk/audio.svg); }
+.btn-mute.checked { qproperty-icon: url(theme:TrediaInk/mute.svg); }
+.btn-monitor { qproperty-icon: url(theme:TrediaInk/headphones-off.svg); }
+.btn-monitor.checked { qproperty-icon: url(theme:TrediaInk/headphones.svg); }
+
+.indicator-lock::indicator:checked,
+.indicator-lock::indicator:checked:hover {
+    image: url(theme:TrediaInk/locked.svg);
+}
+
+.indicator-lock::indicator:unchecked,
+.indicator-lock::indicator:unchecked:hover {
+    image: url(theme:TrediaInk/unlocked.svg);
+}
+
+.indicator-visibility::indicator:checked,
+.indicator-visibility::indicator:checked:hover {
+    image: url(theme:TrediaInk/visible.svg);
+}
+
+.indicator-visibility::indicator:unchecked,
+.indicator-visibility::indicator:unchecked:hover {
+    image: url(theme:TrediaInk/invisible.svg);
+}
+
+OBSBasic {
+    qproperty-imageIcon: url(theme:TrediaInk/image.svg);
+    qproperty-colorIcon: url(theme:TrediaInk/brush.svg);
+    qproperty-slideshowIcon: url(theme:TrediaInk/slideshow.svg);
+    qproperty-audioInputIcon: url(theme:TrediaInk/microphone.svg);
+    qproperty-audioOutputIcon: url(theme:TrediaInk/audio.svg);
+    qproperty-desktopCapIcon: url(theme:TrediaInk/monitor.svg);
+    qproperty-windowCapIcon: url(theme:TrediaInk/window.svg);
+    qproperty-gameCapIcon: url(theme:TrediaInk/gamepad.svg);
+    qproperty-cameraIcon: url(theme:TrediaInk/camera.svg);
+    qproperty-textIcon: url(theme:TrediaInk/text.svg);
+    qproperty-mediaIcon: url(theme:TrediaInk/media.svg);
+    qproperty-browserIcon: url(theme:TrediaInk/globe.svg);
+    qproperty-groupIcon: url(theme:TrediaInk/folder.svg);
+    qproperty-sceneIcon: url(theme:TrediaInk/layers.svg);
+    qproperty-defaultIcon: url(theme:TrediaInk/box.svg);
+    qproperty-audioProcessOutputIcon: url(theme:TrediaInk/app-audio.svg);
+}
+
+/* ---- Light-only touches ----------------------------------------------------------------------- */
+
+VolumeMeter {
+    qproperty-backgroundWarningColor: #F6E3B5;
+    qproperty-backgroundErrorColor: #F6CFE2;
+    qproperty-foregroundWarningColor: #C98A00;
+    qproperty-magnitudeColor: #1D1236;
+}
+
+QSlider::handle:horizontal,
+QSlider::handle:vertical {
+    background-color: var(--tr_accent);
+}
+
+QToolTip {
+    background-color: #1D1236;
+    color: #FFFFFF;
+    border: 1px solid #1D1236;
+}

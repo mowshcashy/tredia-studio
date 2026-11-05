@@ -30,6 +30,13 @@ public:
 	explicit TrediaDock(QWidget *parent = nullptr);
 	void handleEvent(enum obs_frontend_event event);
 
+	/* The top bar's "go live": through Tredia (Turbo), or from this PC straight to the platforms
+	 * ticked on Tredia, fetched fresh so nothing has to be typed in here. */
+	void goLive();
+
+signals:
+	void goLiveBusy(bool busy);
+
 private:
 	TrediaApi *api;
 	MultiOutput *multi;
@@ -69,6 +76,9 @@ private:
 	QJsonObject liveInfo;
 	QTimer livePoll;
 	bool turbo = true;
+	/* While a "from this PC" stream uses Tredia's destinations: the service to put back afterwards. */
+	bool directActive = false;
+	QJsonObject serviceBeforeDirect;
 
 	void buildSignedOut(QWidget *page);
 	void buildSignedIn(QWidget *page);
@@ -86,4 +96,6 @@ private:
 	void checkForUpdate();
 	void saveMode() const;
 	void loadMode();
+	void updateNote();
+	void restoreAfterDirect();
 };

@@ -359,21 +359,28 @@ void TrediaDock::buildSignedIn(QWidget *page)
 			setTurbo(on, true);
 	});
 
-	/* Turbo: the platforms of this stream */
-	turboPanel = new QWidget;
-	auto *turboBox = new QVBoxLayout(turboPanel);
-	turboBox->setContentsMargins(0, 6, 0, 0);
-	turboBox->setSpacing(6);
-	turboBox->addWidget(heading(QStringLiteral("منصاتك في هذا البث")));
+	/* The platforms of this stream: the same checklist as tredia.cloud/live, in both modes. */
+	auto *platforms = new QWidget;
+	auto *platformsBox = new QVBoxLayout(platforms);
+	platformsBox->setContentsMargins(0, 6, 0, 0);
+	platformsBox->setSpacing(6);
+	platformsBox->addWidget(heading(QStringLiteral("منصاتك في هذا البث")));
 	destinationsBox = new QVBoxLayout;
 	destinationsBox->setSpacing(6);
-	turboBox->addLayout(destinationsBox);
+	platformsBox->addLayout(destinationsBox);
 	turboNote = wrapLabel(QString(), "trediaMuted");
-	turboBox->addWidget(turboNote);
+	platformsBox->addWidget(turboNote);
 	auto *manage = new QPushButton(QStringLiteral("أضف منصة أو اربط حساب"));
 	manage->setFlat(true);
 	connect(manage, &QPushButton::clicked, this, [this]() { openUrl(api->baseUrl() + QStringLiteral("/live")); });
-	turboBox->addWidget(manage, 0, Qt::AlignLeading);
+	platformsBox->addWidget(manage, 0, Qt::AlignLeading);
+	layout->addWidget(platforms);
+
+	/* Turbo: what Tredia is doing with the stream */
+	turboPanel = new QWidget;
+	auto *turboBox = new QVBoxLayout(turboPanel);
+	turboBox->setContentsMargins(0, 0, 0, 0);
+	turboBox->setSpacing(6);
 	liveStatus = wrapLabel(QString());
 	liveStatus->setObjectName("trediaLive");
 	liveStatus->setVisible(false);
@@ -400,8 +407,8 @@ void TrediaDock::buildSignedIn(QWidget *page)
 	auto *localBox = new QVBoxLayout(localPanel);
 	localBox->setContentsMargins(0, 6, 0, 0);
 	localBox->setSpacing(6);
-	localBox->addWidget(heading(QStringLiteral("جهات إضافية")));
-	localBox->addWidget(wrapLabel(QStringLiteral("البث الرئيسي يروح للي في الإعدادات ← البث. وهذي تبدأ معه وتوقف معه:"), "trediaMuted"));
+	localBox->addWidget(heading(QStringLiteral("جهات إضافية (اختياري)")));
+	localBox->addWidget(wrapLabel(QStringLiteral("لجهة مو مضافة في تريديا. تبدأ مع البث وتوقف معه:"), "trediaMuted"));
 	localList = new QVBoxLayout;
 	localList->setSpacing(6);
 	localBox->addLayout(localList);
@@ -622,6 +629,16 @@ void TrediaDock::renderDestinations()
 		});
 		destinationsBox->addWidget(row);
 	}
+	updateNote();
+}
+
+void TrediaDock::updateNote()
+{
+	if (!turbo) {
+		turboNote->setText(QStringLiteral("من جهازك: يبث مباشرة لكل منصة مفعّلة هنا، بدون ما تكتب سيرفر أو مفتاح. "
+						  "يوتيوب ينفتح له بث جديد كل مرة."));
+		return;
+	}
 	const QJsonValue max = liveInfo.value(QStringLiteral("maxPlatforms"));
 	turboNote->setText(max.isNull() ? QStringLiteral("باقتك تبث على كل المنصات مع بعض.")
 					: QStringLiteral("باقتك تبث على %1 منصات مع بعض. تبي أكثر؟ رقّ باقتك من الموقع.").arg(max.toInt()));
@@ -689,6 +706,7 @@ void TrediaDock::setTurbo(bool on, bool applySettings)
 	localPanel->setVisible(!on);
 	setSelected(turboCard, on);
 	setSelected(localCard, !on);
+	updateNote();
 	saveMode();
 	if (applySettings) {
 		if (on)
@@ -783,6 +801,105 @@ void TrediaDock::loadMode()
 	if (file.open(QIODevice::ReadOnly))
 		on = QJsonDocument::fromJson(file.readAll()).object().value(QStringLiteral("turbo")).toBool(true);
 	setTurbo(on, false);
+}
+
+/* ---- Going live ------------------------------------------------------------------------------- */
+
+void TrediaDock::goLive()
+{
+	if (obs_frontend_streaming_active())
+		return;
+	if (turbo || !api->signedIn()) {
+		if (turbo)
+			applyTurboService();
+		obs_frontend_streaming_start();
+		return;
+	}
+
+	/* From this PC: Tredia hands over the push address of every platform ticked above. The first one
+	 * becomes the main stream; the others (and any extra destinations) go out alongside it. */
+	emit goLiveBusy(true);
+	api->post(QStringLiteral("/api/app/live/direct"), QJsonObject(), [this](const QJsonObject &data, int, const QString &error) {
+		emit goLiveBusy(false);
+		if (!error.isEmpty()) {
+			turboNote->setText(error);
+			return;
+		}
+		QList<LocalTarget> site;
+		for (const QJsonValue &v : data.value(QStringLiteral("targets")).toArray()) {
+			const QJsonObject o = v.toObject();
+			LocalTarget t;
+			t.id = QStringLiteral("site-") + o.value(QStringLiteral("id")).toString();
+			t.name = platformName(o.value(QStringLiteral("platform")).toString());
+			t.server = o.value(QStringLiteral("server")).toString();
+			t.key = o.value(QStringLiteral("key")).toString();
+			if (!t.server.isEmpty() && !t.key.isEmpty())
+				site.append(t);
+		}
+		QStringList problems;
+		for (const QJsonValue &v : data.value(QStringLiteral("failed")).toArray()) {
+			const QJsonObject o = v.toObject();
+			problems << platformName(o.value(QStringLiteral("platform")).toString()) + QStringLiteral(": ") +
+					    o.value(QStringLiteral("error")).toString();
+		}
+		if (problems.isEmpty())
+			updateNote();
+		else
+			turboNote->setText(problems.join('\n'));
+
+		if (site.isEmpty()) {
+			/* Nothing ticked on Tredia: the stream goes to Settings > Stream, plus the extra destinations. */
+			multi->setSiteTargets({});
+			obs_frontend_streaming_start();
+			return;
+		}
+
+		if (!directActive) {
+			serviceBeforeDirect = QJsonObject();
+			if (obs_service_t *current = obs_frontend_get_streaming_service()) {
+				obs_data_t *s = obs_service_get_settings(current);
+				serviceBeforeDirect.insert(QStringLiteral("type"), QString::fromUtf8(obs_service_get_type(current)));
+				serviceBeforeDirect.insert(QStringLiteral("settings"), QString::fromUtf8(obs_data_get_json(s)));
+				obs_data_release(s);
+			}
+		}
+		const LocalTarget first = site.takeFirst();
+		obs_data_t *settings = obs_data_create();
+		obs_data_set_string(settings, "server", first.server.toUtf8().constData());
+		obs_data_set_string(settings, "key", first.key.toUtf8().constData());
+		obs_service_t *service = obs_service_create("rtmp_custom", "default_service", settings, nullptr);
+		obs_data_release(settings);
+		if (!service) {
+			turboNote->setText(QStringLiteral("تعذّر تجهيز البث. جرّب مرة ثانية."));
+			return;
+		}
+		obs_frontend_set_streaming_service(service);
+		obs_service_release(service);
+		multi->setSiteTargets(site);
+		directActive = true;
+		obs_frontend_streaming_start();
+	});
+}
+
+/* After a "from this PC" stream: Settings > Stream goes back to what it was (the keys Tredia handed
+ * over were for that stream only). */
+void TrediaDock::restoreAfterDirect()
+{
+	multi->setSiteTargets({});
+	if (!directActive)
+		return;
+	directActive = false;
+	const QByteArray type = serviceBeforeDirect.value(QStringLiteral("type")).toString().toUtf8();
+	const QByteArray json = serviceBeforeDirect.value(QStringLiteral("settings")).toString().toUtf8();
+	if (type.isEmpty())
+		return;
+	obs_data_t *settings = obs_data_create_from_json(json.constData());
+	obs_service_t *service = obs_service_create(type.constData(), "default_service", settings, nullptr);
+	obs_data_release(settings);
+	if (service) {
+		obs_frontend_set_streaming_service(service);
+		obs_service_release(service);
+	}
 }
 
 /* ---- Overlays --------------------------------------------------------------------------------- */
@@ -985,6 +1102,7 @@ void TrediaDock::handleEvent(enum obs_frontend_event event)
 	case OBS_FRONTEND_EVENT_STREAMING_STOPPED:
 		livePoll.stop();
 		liveStatus->setVisible(false);
+		restoreAfterDirect();
 		afterStream();
 		break;
 	case OBS_FRONTEND_EVENT_RECORDING_STOPPED:

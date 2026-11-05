@@ -1,5 +1,6 @@
 /* Tredia Studio: the Tredia panel (sign-in, Turbo, "from this PC", overlays, report, uploads). */
 
+#include "top-bar.hpp"
 #include "tredia-dock.hpp"
 
 #include <obs-frontend-api.h>
@@ -26,6 +27,7 @@ MODULE_EXPORT const char *obs_module_description(void)
 }
 
 static QPointer<TrediaDock> dock;
+static QPointer<TrediaTopBar> topBar;
 
 /* The first time Tredia Studio opens, the Tredia panel is shown docked on the side; after that the
  * person's own layout wins (OBS saves and restores docks). */
@@ -57,6 +59,8 @@ static void onFrontendEvent(enum obs_frontend_event event, void *)
 		showOnFirstRun();
 	if (dock)
 		dock->handleEvent(event);
+	if (topBar)
+		topBar->handleEvent(event);
 }
 
 bool obs_module_load(void)
@@ -67,6 +71,10 @@ bool obs_module_load(void)
 		delete dock;
 		return false;
 	}
+	/* The top bar: logo, live status, go live and record (it replaces OBS's controls dock). */
+	topBar = new TrediaTopBar(main, dock);
+	main->addToolBar(Qt::TopToolBarArea, topBar);
+
 	obs_frontend_add_event_callback(onFrontendEvent, nullptr);
 	return true;
 }
