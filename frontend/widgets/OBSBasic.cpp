@@ -337,7 +337,7 @@ OBSBasic::OBSBasic(QWidget *parent) : OBSMainWindow(parent), undo_s(ui), ui(new 
 	installEventFilter(shortcutFilter);
 
 	stringstream name;
-	name << "OBS " << App()->GetVersionString();
+	name << "Tredia Studio (based on OBS " << App()->GetVersionString() << ")";
 	blog(LOG_INFO, "%s", name.str().c_str());
 	blog(LOG_INFO, "---------------------------------");
 
@@ -1174,7 +1174,7 @@ void OBSBasic::OBSInit()
 		config_save_safe(App()->GetAppConfig(), "tmp", nullptr);
 	}
 #endif
-	TimedCheckForUpdates();
+	/* Tredia Studio: no OBS auto-update (it would install official OBS over this app). */
 
 	emit userSettingChanged("BasicWindow", "VerticalVolumeControl");
 
@@ -1227,6 +1227,14 @@ void OBSBasic::OBSInit()
 #endif
 	}
 #endif
+
+	/* Tredia Studio: hide OBS's updater, repair tool and uploads to OBS's servers. */
+	for (QAction *action : {ui->actionCheckForUpdates, ui->actionRepair, ui->actionUploadCurrentLog,
+				ui->actionUploadLastLog, ui->actionUploadLastCrashLog}) {
+		if (action) {
+			action->setVisible(false);
+		}
+	}
 
 #ifndef WHATSNEW_ENABLED
 	delete ui->actionShowWhatsNew;
@@ -1982,10 +1990,7 @@ void OBSBasic::UpdateTitleBar()
 	const char *profile = config_get_string(App()->GetUserConfig(), "Basic", "Profile");
 	const char *sceneCollection = config_get_string(App()->GetUserConfig(), "Basic", "SceneCollection");
 
-	name << "OBS ";
-	if (previewProgramMode) {
-		name << "Studio ";
-	}
+	name << "Tredia Studio ";
 
 	name << App()->GetVersionString(false);
 	if (safe_mode) {

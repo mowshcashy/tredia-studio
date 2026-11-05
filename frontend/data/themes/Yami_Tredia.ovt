@@ -1,0 +1,158 @@
+/* ------------------------------------------------------------------------- *
+ * Tredia Studio: the default look. A variant of Yami (OBS Studio's theme)   *
+ * in Tredia's colours: deep plum stage, purple accent, pink for "live".     *
+ * ------------------------------------------------------------------------- */
+
+@OBSThemeMeta {
+    name: 'Tredia';
+    id: 'com.tredia.Studio';
+    extends: 'com.obsproject.Yami';
+    author: 'Tredia';
+    dark: 'true';
+}
+
+@OBSThemeVars {
+    /* Plum greys, from the website's stage colours */
+    --grey1: #6B5F8A;
+    --grey2: #574A78;
+    --grey3: #3F3163;
+    --grey4: #30244F;
+    --grey5: #271C43;
+    --grey6: #1C1236;
+    --grey7: #150D2B;
+    --grey8: #100822;
+
+    --purple1: #C4B2F2;
+    --purple2: #A98BE6;
+    --purple3: #8B6BD9;
+    --purple4: #7A45C4;
+    --purple5: #5B2A9E;
+    --purple6: #3B1670;
+
+    --pink1: #F07BBE;
+    --pink2: #E0479E;
+    --pink3: #C42E84;
+
+    --bg_window: var(--grey7);
+    --bg_base: var(--grey6);
+    --bg_preview: var(--grey8);
+
+    --primary: var(--purple5);
+    --primary_light: var(--purple4);
+    --primary_lighter: var(--purple2);
+    --primary_dark: var(--purple6);
+    --primary_darker: #2A0F52;
+
+    --text: #F5F1FF;
+    --text_light: #F5F1FF;
+    --text_muted: #A99FC9;
+    --highlight_color: var(--purple2);
+
+    --border_color: var(--grey4);
+    --border_radius: 8px;
+    --border_radius_small: 6px;
+    --border_radius_large: 12px;
+
+    --input_bg: var(--grey5);
+    --input_bg_hover: var(--grey4);
+    --input_bg_focus: var(--grey7);
+    --input_border: var(--grey3);
+    --input_border_hover: var(--grey1);
+    --input_border_focus: var(--purple3);
+
+    --list_item_bg_selected: var(--primary);
+    --list_item_bg_hover: var(--grey4);
+
+    --button_bg: var(--grey4);
+    --button_bg_hover: var(--grey3);
+    --button_bg_down: var(--grey7);
+    --button_bg_disabled: var(--grey6);
+    --button_border: var(--grey4);
+    --button_border_hover: var(--grey1);
+    --button_border_focus: var(--purple3);
+
+    --tab_bg_down: var(--primary);
+    --tab_border_selected: var(--purple3);
+    --tab_border_focus: var(--purple2);
+
+    /* Slim, quiet scrollbars */
+    --scrollbar_size: 8px;
+    --scrollbar_handle: var(--grey3);
+    --scrollbar_bg: transparent;
+    --scrollbar_hover: var(--grey1);
+    --scrollbar_down: var(--purple4);
+    --scrollbar_border: transparent;
+
+    --palette_highlight: var(--primary);
+    --palette_link: var(--purple2);
+}
+
+/* Panels: rounded plum cards */
+QDockWidget::title {
+    background-color: var(--grey5);
+    border: 1px solid var(--grey4);
+    border-top-left-radius: var(--border_radius_large);
+    border-top-right-radius: var(--border_radius_large);
+    padding: var(--padding_large) var(--padding_xlarge);
+}
+
+QScrollBar::handle {
+    border-radius: 4px;
+}
+
+/* Main controls: purple, and pink while you're live */
+#streamButton,
+#recordButton,
+#broadcastButton {
+    border-radius: var(--border_radius_large);
+    font-weight: bold;
+}
+
+#streamButton:!hover:!pressed.state-active,
+#broadcastButton:!hover:!pressed.state-active {
+    background: var(--pink2);
+    border-color: var(--pink2);
+}
+
+#streamButton:hover:!pressed.state-active,
+#broadcastButton:hover:!pressed.state-active {
+    background: var(--pink1);
+    border-color: var(--pink1);
+}
+
+#recordButton:!hover:!pressed.state-active {
+    background: var(--red3);
+    border-color: var(--red3);
+}
+
+#streamButton:!checked,
+#broadcastButton:!checked {
+    background: var(--primary);
+    border-color: var(--primary_light);
+}
+
+#streamButton:hover:!checked,
+#broadcastButton:hover:!checked {
+    background: var(--primary_light);
+}
+
+QPushButton {
+    border-radius: var(--border_radius);
+}
+
+QLineEdit,
+QTextEdit,
+QPlainTextEdit,
+QSpinBox,
+QDoubleSpinBox,
+QComboBox {
+    border-radius: var(--border_radius);
+}
+
+QMenu {
+    border-radius: var(--border_radius);
+}
+
+QMenu::item:selected {
+    background-color: var(--primary);
+}

@@ -119,6 +119,8 @@ PluginFailureAction handlePluginFailure()
 UncleanLaunchAction handleUncleanShutdown(bool enableCrashUpload)
 {
 	UncleanLaunchAction launchAction;
+	/* Tredia Studio: crash logs stay on this PC. */
+	enableCrashUpload = false;
 
 	blog(LOG_WARNING, "Crash or unclean shutdown detected");
 
@@ -435,21 +437,21 @@ static bool MakeUserDirs()
 {
 	char path[512];
 
-	if (GetAppConfigPath(path, sizeof(path), "obs-studio/basic") <= 0) {
+	if (GetAppConfigPath(path, sizeof(path), "tredia-studio/basic") <= 0) {
 		return false;
 	}
 	if (!do_mkdir(path)) {
 		return false;
 	}
 
-	if (GetAppConfigPath(path, sizeof(path), "obs-studio/logs") <= 0) {
+	if (GetAppConfigPath(path, sizeof(path), "tredia-studio/logs") <= 0) {
 		return false;
 	}
 	if (!do_mkdir(path)) {
 		return false;
 	}
 
-	if (GetAppConfigPath(path, sizeof(path), "obs-studio/profiler_data") <= 0) {
+	if (GetAppConfigPath(path, sizeof(path), "tredia-studio/profiler_data") <= 0) {
 		return false;
 	}
 	if (!do_mkdir(path)) {
@@ -457,7 +459,7 @@ static bool MakeUserDirs()
 	}
 
 #ifdef _WIN32
-	if (GetAppConfigPath(path, sizeof(path), "obs-studio/crashes") <= 0) {
+	if (GetAppConfigPath(path, sizeof(path), "tredia-studio/crashes") <= 0) {
 		return false;
 	}
 	if (!do_mkdir(path)) {
@@ -465,14 +467,14 @@ static bool MakeUserDirs()
 	}
 #endif
 
-	if (GetAppConfigPath(path, sizeof(path), "obs-studio/updates") <= 0) {
+	if (GetAppConfigPath(path, sizeof(path), "tredia-studio/updates") <= 0) {
 		return false;
 	}
 	if (!do_mkdir(path)) {
 		return false;
 	}
 
-	if (GetAppConfigPath(path, sizeof(path), "obs-studio/plugin_config") <= 0) {
+	if (GetAppConfigPath(path, sizeof(path), "tredia-studio/plugin_config") <= 0) {
 		return false;
 	}
 	if (!do_mkdir(path)) {
@@ -482,9 +484,9 @@ static bool MakeUserDirs()
 	return true;
 }
 
-constexpr std::string_view OBSProfileSubDirectory = "obs-studio/basic/profiles";
-constexpr std::string_view OBSScenesSubDirectory = "obs-studio/basic/scenes";
-constexpr std::string_view OBSPluginManagerSubDirectory = "obs-studio/plugin_manager";
+constexpr std::string_view OBSProfileSubDirectory = "tredia-studio/basic/profiles";
+constexpr std::string_view OBSScenesSubDirectory = "tredia-studio/basic/scenes";
+constexpr std::string_view OBSPluginManagerSubDirectory = "tredia-studio/plugin_manager";
 
 static bool MakeUserProfileDirs()
 {
@@ -565,7 +567,7 @@ bool OBSApp::InitGlobalConfig()
 {
 	char path[512];
 
-	int len = GetAppConfigPath(path, sizeof(path), "obs-studio/global.ini");
+	int len = GetAppConfigPath(path, sizeof(path), "tredia-studio/global.ini");
 	if (len <= 0) {
 		return false;
 	}
@@ -637,7 +639,7 @@ bool OBSApp::InitGlobalConfig()
 
 bool OBSApp::InitUserConfig(std::filesystem::path &userConfigLocation, uint32_t lastVersion)
 {
-	const std::string userConfigFile = userConfigLocation.u8string() + "/obs-studio/user.ini";
+	const std::string userConfigFile = userConfigLocation.u8string() + "/tredia-studio/user.ini";
 
 	int errorCode = userConfig.Open(userConfigFile.c_str(), CONFIG_OPEN_ALWAYS);
 
@@ -720,8 +722,8 @@ void OBSApp::MigrateLegacySettings(const uint32_t lastVersion)
 	}
 }
 
-static constexpr string_view OBSGlobalIniPath = "/obs-studio/global.ini";
-static constexpr string_view OBSUserIniPath = "/obs-studio/user.ini";
+static constexpr string_view OBSGlobalIniPath = "/tredia-studio/global.ini";
+static constexpr string_view OBSUserIniPath = "/tredia-studio/user.ini";
 
 bool OBSApp::MigrateGlobalSettings()
 {
@@ -768,7 +770,8 @@ bool OBSApp::InitLocale()
 	const char *lang = config_get_string(userConfig, "General", "Language");
 	bool userLocale = config_has_user_value(userConfig, "General", "Language");
 	if (!userLocale || !lang || lang[0] == '\0') {
-		lang = DEFAULT_LANG;
+		/* Tredia Studio speaks Arabic first; English and the rest stay in Settings. */
+		lang = "ar-SA";
 	}
 
 	locale = lang;
@@ -883,7 +886,7 @@ bool LoadBranchesFile(vector<UpdateBranch> &out)
 	string error;
 	string branchesText;
 
-	BPtr<char> branchesFilePath = GetAppConfigPathPtr("obs-studio/updates/branches.json");
+	BPtr<char> branchesFilePath = GetAppConfigPathPtr("tredia-studio/updates/branches.json");
 
 	QFile branchesFile(branchesFilePath.Get());
 	if (!branchesFile.open(QIODevice::ReadOnly)) {
@@ -1021,7 +1024,7 @@ static void move_basic_to_profiles(void)
 {
 	char path[512];
 
-	if (GetAppConfigPath(path, 512, "obs-studio/basic") <= 0) {
+	if (GetAppConfigPath(path, 512, "tredia-studio/basic") <= 0) {
 		return;
 	}
 
@@ -1032,7 +1035,7 @@ static void move_basic_to_profiles(void)
 	}
 
 	const std::filesystem::path profilesPath =
-		App()->userProfilesLocation / std::filesystem::u8path("obs-studio/basic/profiles");
+		App()->userProfilesLocation / std::filesystem::u8path("tredia-studio/basic/profiles");
 
 	if (std::filesystem::exists(profilesPath)) {
 		return;
@@ -1085,7 +1088,7 @@ static void move_basic_to_scene_collections(void)
 {
 	char path[512];
 
-	if (GetAppConfigPath(path, 512, "obs-studio/basic") <= 0) {
+	if (GetAppConfigPath(path, 512, "tredia-studio/basic") <= 0) {
 		return;
 	}
 
@@ -1096,7 +1099,7 @@ static void move_basic_to_scene_collections(void)
 	}
 
 	const std::filesystem::path sceneCollectionPath =
-		App()->userScenesLocation / std::filesystem::u8path("obs-studio/basic/scenes");
+		App()->userScenesLocation / std::filesystem::u8path("tredia-studio/basic/scenes");
 
 	if (std::filesystem::exists(sceneCollectionPath)) {
 		return;
@@ -1137,6 +1140,11 @@ void OBSApp::AppInit()
 	}
 	if (!InitLocale()) {
 		throw "Failed to load locale";
+	}
+
+	/* Tredia Studio: Arabic (and other right-to-left languages) lay out right to left. */
+	if (locale.rfind("ar", 0) == 0 || locale.rfind("fa", 0) == 0 || locale.rfind("he", 0) == 0) {
+		setLayoutDirection(Qt::RightToLeft);
 	}
 	if (!InitTheme()) {
 		throw "Failed to load theme";
@@ -1220,7 +1228,7 @@ static bool StartupOBS(const char *locale, profiler_name_store_t *store)
 {
 	char path[512];
 
-	if (GetAppConfigPath(path, sizeof(path), "obs-studio/plugin_config") <= 0) {
+	if (GetAppConfigPath(path, sizeof(path), "tredia-studio/plugin_config") <= 0) {
 		return false;
 	}
 
@@ -1462,14 +1470,14 @@ void OBSApp::uploadLastAppLog() const
 {
 	OBSBasic *basicWindow = static_cast<OBSBasic *>(GetMainWindow());
 
-	basicWindow->UploadLog("obs-studio/logs", GetLastLog(), OBS::LogFileType::LastAppLog);
+	basicWindow->UploadLog("tredia-studio/logs", GetLastLog(), OBS::LogFileType::LastAppLog);
 }
 
 void OBSApp::uploadCurrentAppLog() const
 {
 	OBSBasic *basicWindow = static_cast<OBSBasic *>(GetMainWindow());
 
-	basicWindow->UploadLog("obs-studio/logs", GetCurrentLog(), OBS::LogFileType::CurrentAppLog);
+	basicWindow->UploadLog("tredia-studio/logs", GetCurrentLog(), OBS::LogFileType::CurrentAppLog);
 }
 
 void OBSApp::uploadLastCrashLog()

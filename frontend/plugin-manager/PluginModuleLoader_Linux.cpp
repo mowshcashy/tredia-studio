@@ -65,11 +65,11 @@ namespace Constants = OBS::Constants;
 
 constexpr std::string_view kModulePathSuffix{"/%module%/"};
 constexpr std::string_view kModuleDataPathSuffix{"/%module%/data/"};
-constexpr std::string_view kXdgBinaryPath{"/obs-studio/plugins/%module%/"};
-constexpr std::string_view kXdgDataPath{"/obs-studio/plugins/%module%/data/"};
+constexpr std::string_view kXdgBinaryPath{"/tredia-studio/plugins/%module%/"};
+constexpr std::string_view kXdgDataPath{"/tredia-studio/plugins/%module%/data/"};
 
-constexpr std::string_view kLegacyXdgBinaryPath{"/obs-studio/plugins/%module%/bin/64bit"};
-constexpr std::string_view kLegacyXdgDataPath{"/obs-studio/plugins/%module%/data"};
+constexpr std::string_view kLegacyXdgBinaryPath{"/tredia-studio/plugins/%module%/bin/64bit"};
+constexpr std::string_view kLegacyXdgDataPath{"/tredia-studio/plugins/%module%/data"};
 
 constexpr bool hasSystemPluginPath = !Constants::kPlatformPluginModulePath.empty() &&
 				     !Constants::kPlatformPluginDataPath.empty();

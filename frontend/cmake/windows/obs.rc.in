@@ -7,14 +7,14 @@ BEGIN
   BEGIN
     BLOCK "040904B0"
     BEGIN
-      VALUE "CompanyName", "OBS"
-      VALUE "FileDescription", "OBS Studio"
+      VALUE "CompanyName", "Tredia"
+      VALUE "FileDescription", "Tredia Studio"
       VALUE "FileVersion", "${OBS_VERSION_CANONICAL}"
-      VALUE "InternalName", "obs"
-      VALUE "OriginalFilename", "obs"
-      VALUE "ProductName", "OBS Studio"
+      VALUE "InternalName", "tredia-studio"
+      VALUE "OriginalFilename", "tredia-studio"
+      VALUE "ProductName", "Tredia Studio"
       VALUE "ProductVersion", "${OBS_VERSION_CANONICAL}"
-      VALUE "Comments", "Free and open source software for video recording and live streaming"
+      VALUE "Comments", "Tredia Studio, based on OBS Studio (GPL-2.0-or-later)"
       VALUE "LegalCopyright", "${OBS_LEGAL_COPYRIGHT}"
     END
   END

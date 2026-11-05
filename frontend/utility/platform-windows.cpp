@@ -54,7 +54,7 @@ bool GetDataFilePath(const char *data, string &output)
 		return true;
 	}
 
-	return check_path(data, OBS_DATA_PATH "/obs-studio/", output);
+	return check_path(data, OBS_DATA_PATH "/tredia-studio/", output);
 }
 
 string GetDefaultVideoSavePath()
@@ -305,7 +305,7 @@ RunOnceMutex CheckIfAlreadyRunning(bool &already_running)
 	string name;
 
 	if (!portable_mode) {
-		name = "OBSStudioCore";
+		name = "TrediaStudioCore";
 	} else {
 		char path[500];
 		char absPath[512];

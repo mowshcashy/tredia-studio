@@ -1,0 +1,64 @@
+name: Tredia Studio (Windows)
+run-name: ${{ github.ref_name }} — Windows build
+
+# Builds Tredia Studio for Windows x64 on every push to the tredia branch,
+# and publishes a GitHub release for tags named tredia-v* (e.g. tredia-v1.0.0).
+on:
+  push:
+    branches:
+      - tredia
+    tags:
+      - 'tredia-v*'
+    paths-ignore:
+      - '**.md'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: tredia-windows-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  windows:
+    name: Windows x64
+    runs-on: windows-2025-vs2026
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: Build Tredia Studio
+        uses: ./.github/actions/build-obs
+        with:
+          target: x64
+          config: RelWithDebInfo
+
+      - name: Package Tredia Studio
+        run: |
+          $Install = "${{ github.workspace }}/build_x64/install"
+          $Version = if ("${{ github.ref_type }}" -eq "tag") { "${{ github.ref_name }}".Replace("tredia-v", "") } else { "dev-${{ github.sha }}".Substring(0, 13) }
+          $Name = "Tredia-Studio-${Version}-windows-x64"
+          New-Item -ItemType Directory -Force -Path dist | Out-Null
+          Compress-Archive -Path "${Install}/*" -DestinationPath "dist/${Name}.zip"
+          "PACKAGE=dist/${Name}.zip" | Out-File -FilePath $env:GITHUB_ENV -Append
+
+      - name: Upload build
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: tredia-studio-windows-x64-${{ github.sha }}
+          path: ${{ env.PACKAGE }}
+
+      - name: Publish release
+        if: github.ref_type == 'tag'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${{ github.ref_name }}" "${{ env.PACKAGE }}" `
+            --title "Tredia Studio ${{ github.ref_name }}" `
+            --notes "Tredia Studio for Windows (x64). Built on OBS Studio 33.0.1 (GPL-2.0-or-later). Source code: this repository."
