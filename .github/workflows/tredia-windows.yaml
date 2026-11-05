@@ -1,8 +1,8 @@
 name: Tredia Studio (Windows)
 run-name: ${{ github.ref_name }} — Windows build
 
-# Builds Tredia Studio for Windows x64 on every push to the tredia branch,
-# and publishes a GitHub release for tags named tredia-v* (e.g. tredia-v1.0.0).
+# Builds Tredia Studio for Windows x64 on every push to the tredia branch (zip + installer as a build
+# artifact), and publishes a GitHub release for tags named tredia-v* (e.g. tredia-v1.0.0).
 on:
   push:
     branches:
@@ -41,24 +41,38 @@ jobs:
 
       - name: Package Tredia Studio
         run: |
-          $Install = "${{ github.workspace }}/build_x64/install"
-          $Version = if ("${{ github.ref_type }}" -eq "tag") { "${{ github.ref_name }}".Replace("tredia-v", "") } else { "dev-${{ github.sha }}".Substring(0, 13) }
+          $Install = Join-Path "${{ github.workspace }}" "build_x64/install"
+          $IsTag = "${{ github.ref_type }}" -eq "tag"
+          $Version = if ($IsTag) { "${{ github.ref_name }}".Replace("tredia-v", "") } else { "dev-" + "${{ github.sha }}".Substring(0, 9) }
           $Name = "Tredia-Studio-${Version}-windows-x64"
-          New-Item -ItemType Directory -Force -Path dist | Out-Null
-          Compress-Archive -Path "${Install}/*" -DestinationPath "dist/${Name}.zip"
-          "PACKAGE=dist/${Name}.zip" | Out-File -FilePath $env:GITHUB_ENV -Append
+          $Dist = Join-Path "${{ github.workspace }}" "dist"
+          New-Item -ItemType Directory -Force -Path $Dist | Out-Null
+
+          # Portable zip
+          Compress-Archive -Path (Join-Path $Install "*") -DestinationPath (Join-Path $Dist "${Name}.zip")
+
+          # Installer (NSIS, installed on the runner if missing)
+          if (-not (Get-Command makensis -ErrorAction SilentlyContinue)) {
+            choco install nsis -y --no-progress | Out-Null
+            $env:PATH += ";" + (Join-Path ${env:ProgramFiles(x86)} "NSIS")
+          }
+          $NsisVersion = if ($IsTag) { $Version } else { "0.0.0" }
+          $Setup = Join-Path $Dist "${Name}-setup.exe"
+          makensis /V2 "/DVERSION=$NsisVersion" "/DSRCDIR=$Install" "/DOUTFILE=$Setup" "/DROOT=${{ github.workspace }}" installer/tredia-studio.nsi
+          if ($LASTEXITCODE -ne 0) { throw "makensis failed" }
 
       - name: Upload build
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: tredia-studio-windows-x64-${{ github.sha }}
-          path: ${{ env.PACKAGE }}
+          path: dist/*
 
       - name: Publish release
         if: github.ref_type == 'tag'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "${{ github.ref_name }}" "${{ env.PACKAGE }}" `
+          $Files = Get-ChildItem dist/* | ForEach-Object { $_.FullName }
+          gh release create "${{ github.ref_name }}" @Files `
             --title "Tredia Studio ${{ github.ref_name }}" `
             --notes "Tredia Studio for Windows (x64). Built on OBS Studio 33.0.1 (GPL-2.0-or-later). Source code: this repository."

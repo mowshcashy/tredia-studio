@@ -90,7 +90,12 @@ int MultiOutput::startAll(QString &error)
 		signal_handler_connect(obs_output_get_signal_handler(output), "stop", &MultiOutput::onStop, context);
 
 		if (obs_output_start(output)) {
-			live.append({t.id, output, service, context});
+			Running running;
+			running.id = t.id;
+			running.output = output;
+			running.service = service;
+			running.context = context;
+			live.append(running);
 			emit statusChanged(t.id, QStringLiteral("مباشر"));
 			started += 1;
 		} else {
