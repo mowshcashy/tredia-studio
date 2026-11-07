@@ -604,6 +604,30 @@ QToolButton#trediaSettingsButton {
     qproperty-icon: url(theme:Tredia/gear.svg);
 }
 
+QToolButton#trediaMontageButton {
+    qproperty-icon: url(theme:Tredia/cut.svg);
+}
+
+/* After a recording stops: "edit it" in the montage, a soft brand pill. */
+QPushButton#trediaEditRecording {
+    height: 40px;
+    min-height: 40px;
+    max-height: 40px;
+    border-radius: 20px;
+    padding: 0px 16px;
+    margin: 0px;
+    font-weight: 600;
+    icon-size: 16px;
+    qproperty-icon: url(theme:Tredia/cut.svg);
+    background: var(--tr_raised);
+    border: 1px solid var(--tr_select_line);
+    color: var(--tr_text);
+}
+
+QPushButton#trediaEditRecording:hover {
+    border-color: var(--tr_brand);
+}
+
 /* Record and go live: the studio's pill buttons, with the red dot and the white live dot (a stop
  * square while running). */
 QPushButton#trediaGoLive,

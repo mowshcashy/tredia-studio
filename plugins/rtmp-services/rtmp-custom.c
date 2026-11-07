@@ -125,6 +125,34 @@ static const char *rtmp_custom_get_protocol(void *data)
 	return "RTMP";
 }
 
+/* Tredia Studio: Tredia's own ingest (Turbo) re-sends the stream to every platform, and its server
+ * (mediamtx) drops the platforms' copies whenever frames come out of order ("too many reordered
+ * frames"): with OBS's default B-frames a Turbo stream lost 17% of its frames in two minutes. So no
+ * B-frames for it, and a keyframe at least every 2 s for the platforms behind it. */
+static void tredia_ingest_settings(const char *server, obs_data_t *video_settings)
+{
+	if (!video_settings || !server || !strstr(server, "tredia.cloud"))
+		return;
+
+	obs_data_set_int(video_settings, "bf", 0);      /* NVENC, AMF */
+	obs_data_set_int(video_settings, "bframes", 0); /* QuickSync */
+
+	const long long keyint = obs_data_get_int(video_settings, "keyint_sec");
+	if (keyint <= 0 || keyint > 2)
+		obs_data_set_int(video_settings, "keyint_sec", 2);
+
+	const char *x264opts = obs_data_get_string(video_settings, "x264opts"); /* x264 */
+	if (!strstr(x264opts, "bframes=0")) {
+		struct dstr opts;
+		dstr_init_copy(&opts, x264opts);
+		if (!dstr_is_empty(&opts))
+			dstr_cat(&opts, " ");
+		dstr_cat(&opts, "bframes=0");
+		obs_data_set_string(video_settings, "x264opts", opts.array);
+		dstr_free(&opts);
+	}
+}
+
 static void rtmp_custom_apply_settings(void *data, obs_data_t *video_settings, obs_data_t *audio_settings)
 {
 	struct rtmp_custom *service = data;
@@ -139,6 +167,7 @@ static void rtmp_custom_apply_settings(void *data, obs_data_t *video_settings, o
 		obs_data_set_bool(video_settings, "repeat_headers", true);
 	if (has_mpegts && audio_settings != NULL)
 		obs_data_set_bool(audio_settings, "set_to_ADTS", true);
+	tredia_ingest_settings(service->server, video_settings);
 }
 
 static const char *rtmp_custom_get_connect_info(void *data, uint32_t type)

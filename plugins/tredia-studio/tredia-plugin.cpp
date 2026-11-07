@@ -1,7 +1,8 @@
 /* Tredia Studio: the Tredia panel (sign-in, Turbo, "from this PC", overlays, report, uploads), the top
- * bar, the vertical picture, and the window made to look like Tredia's own studio. */
+ * bar, the vertical picture, the montage editor, and the window made to look like Tredia's own studio. */
 
 #include "main-window.hpp"
+#include "montage.hpp"
 #include "top-bar.hpp"
 #include "tredia-dock.hpp"
 #include "vertical.hpp"
@@ -32,6 +33,7 @@ MODULE_EXPORT const char *obs_module_description(void)
 static QPointer<TrediaVertical> vertical;
 static QPointer<TrediaDock> dock;
 static QPointer<TrediaTopBar> topBar;
+static QPointer<TrediaMontage> montage;
 
 /* The first time Tredia Studio opens, the Tredia panel is shown docked on the side; after that the
  * person's own layout wins (OBS saves and restores docks). */
@@ -73,6 +75,9 @@ static void onFrontendEvent(enum obs_frontend_event event, void *)
 	}
 	if (event == OBS_FRONTEND_EVENT_THEME_CHANGED)
 		TrediaWindow::tintCaption(main);
+	/* The montage window is a window of its own: it closes (and its exports stop) with OBS. */
+	if (event == OBS_FRONTEND_EVENT_EXIT && montage)
+		montage->shutdown();
 	if (dock)
 		dock->handleEvent(event);
 	if (topBar)
@@ -90,7 +95,8 @@ bool obs_module_load(void)
 	}
 	/* The top bar: logo, menu, the vertical picture, live status, go live and record (it replaces
 	 * OBS's controls dock). */
-	topBar = new TrediaTopBar(main, dock, vertical);
+	montage = new TrediaMontage(main);
+	topBar = new TrediaTopBar(main, dock, vertical, montage);
 	main->addToolBar(Qt::TopToolBarArea, topBar);
 
 	obs_frontend_add_event_callback(onFrontendEvent, nullptr);

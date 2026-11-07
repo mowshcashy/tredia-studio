@@ -484,6 +484,21 @@ void TrediaVerticalBox::resizeEvent(QResizeEvent *event)
 	fitWidth();
 }
 
+/* Placed in OBS's preview row: follow the row's width too (a narrower window, a narrower box). */
+bool TrediaVerticalBox::event(QEvent *event)
+{
+	if (event->type() == QEvent::ParentChange && parentWidget())
+		parentWidget()->installEventFilter(this);
+	return QWidget::event(event);
+}
+
+bool TrediaVerticalBox::eventFilter(QObject *watched, QEvent *event)
+{
+	if (watched == parentWidget() && event->type() == QEvent::Resize)
+		fitWidth();
+	return QWidget::eventFilter(watched, event);
+}
+
 /* Horizontal: OBS's preview only. Both: side by side. Vertical: the vertical preview only. */
 void TrediaVerticalBox::apply()
 {
@@ -504,7 +519,11 @@ void TrediaVerticalBox::fitWidth()
 		return;
 	}
 	const int content = std::max(0, height() - caption->sizeHint().height() - 6);
-	const int w = content * 9 / 16 + 4;
+	int w = content * 9 / 16 + 4;
+	/* Never more than 40% of the row: the horizontal picture stays the big one. */
+	if (QWidget *row = parentWidget())
+		w = std::min(w, row->width() * 2 / 5);
+	w = std::max(w, 90);
 	if (minimumWidth() != w || maximumWidth() != w)
 		setFixedWidth(w);
 }

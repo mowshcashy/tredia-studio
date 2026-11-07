@@ -1,7 +1,8 @@
 cmake_minimum_required(VERSION 3.28...3.30)
 
 # Tredia Studio's built-in Tredia features: sign-in, Turbo (Tredia relays the stream to every platform),
-# streaming to several places from this PC, the overlays, the stream report and uploading recordings.
+# streaming to several places from this PC, the overlays, the stream report, uploading recordings and
+# the montage editor (rendered by tredia-ffmpeg.exe, which the Windows package adds next to obs64.exe).
 
 find_package(Qt6 REQUIRED Widgets Network)
 
@@ -22,6 +23,8 @@ target_sources(
     top-bar.hpp
     main-window.cpp
     main-window.hpp
+    montage.cpp
+    montage.hpp
     vertical.cpp
     vertical.hpp
     vertical-preview.cpp
@@ -34,6 +37,11 @@ target_link_libraries(
   tredia-studio
   PRIVATE OBS::frontend-api OBS::libobs Qt::Widgets Qt::Network $<$<PLATFORM_ID:Windows>:crypt32>
 )
+
+# The montage editor shows in OBS's built-in browser (CEF): its panel interface, when it's built.
+if(TARGET OBS::browser-panels)
+  target_link_libraries(tredia-studio PRIVATE OBS::browser-panels)
+endif()
 
 set_target_properties_obs(tredia-studio PROPERTIES FOLDER plugins PREFIX "" AUTOMOC ON AUTOUIC OFF AUTORCC OFF)
 

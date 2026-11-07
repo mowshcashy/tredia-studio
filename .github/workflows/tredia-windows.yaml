@@ -49,6 +49,29 @@ jobs:
           target: x64
           config: RelWithDebInfo
 
+      # The montage editor renders on the PC with ffmpeg (a separate program the plugin runs). Pinned to
+      # gyan.dev's FFmpeg 9.0.2 "essentials" build (GPLv3, the Windows builds ffmpeg.org links to), checked
+      # against the release's SHA-256 before it goes in the package with its license.
+      - name: Add ffmpeg for the montage export
+        run: |
+          $Url = "https://github.com/GyanD/codexffmpeg/releases/download/9.0.2/ffmpeg-9.0.2-essentials_build.7z"
+          $Sha = "4705843ccaaf54257c16ad90f3e952ece33c17df964ecf7bfdbb0f49c7171077"
+          $Archive = Join-Path $env:RUNNER_TEMP "ffmpeg.7z"
+          Invoke-WebRequest -Uri $Url -OutFile $Archive
+          $Got = (Get-FileHash -Algorithm SHA256 $Archive).Hash.ToLower()
+          if ($Got -ne $Sha) { throw "ffmpeg archive checksum mismatch: $Got" }
+          $Out = Join-Path $env:RUNNER_TEMP "ffmpeg"
+          7z x $Archive "-o$Out" -y | Out-Null
+          if ($LASTEXITCODE -ne 0) { throw "7z failed" }
+          $Exe = Get-ChildItem -Path $Out -Recurse -Filter ffmpeg.exe | Select-Object -First 1
+          $License = Get-ChildItem -Path $Out -Recurse -Filter LICENSE | Select-Object -First 1
+          if (-not $Exe) { throw "ffmpeg.exe not in the archive" }
+          $Bin = Join-Path "${{ github.workspace }}" "build_x64/install/bin/64bit"
+          if (-not (Test-Path (Join-Path $Bin "obs64.exe"))) { throw "obs64.exe not found in $Bin" }
+          Copy-Item $Exe.FullName (Join-Path $Bin "tredia-ffmpeg.exe")
+          if ($License) { Copy-Item $License.FullName (Join-Path $Bin "tredia-ffmpeg-LICENSE.txt") }
+          & (Join-Path $Bin "tredia-ffmpeg.exe") -hide_banner -version | Select-Object -First 1
+
       - name: Package Tredia Studio
         run: |
           $Install = Join-Path "${{ github.workspace }}" "build_x64/install"

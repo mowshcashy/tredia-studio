@@ -1,5 +1,6 @@
 #include "top-bar.hpp"
 #include "main-window.hpp"
+#include "montage.hpp"
 #include "tredia-dock.hpp"
 #include "vertical.hpp"
 
@@ -16,6 +17,8 @@
 #include <QSignalBlocker>
 #include <QStyle>
 #include <QToolButton>
+
+#include <util/bmem.h>
 
 namespace {
 
@@ -58,10 +61,11 @@ QWidget *spacer()
 
 } // namespace
 
-TrediaTopBar::TrediaTopBar(QMainWindow *main, TrediaDock *dock_, TrediaVertical *vertical_)
+TrediaTopBar::TrediaTopBar(QMainWindow *main, TrediaDock *dock_, TrediaVertical *vertical_, TrediaMontage *montage_)
 	: QToolBar(main),
 	  dock(dock_),
-	  vertical(vertical_)
+	  vertical(vertical_),
+	  montage(montage_)
 {
 	setObjectName("trediaTopBar");
 	setWindowTitle(QStringLiteral("شريط تريديا"));
@@ -115,7 +119,7 @@ TrediaTopBar::TrediaTopBar(QMainWindow *main, TrediaDock *dock_, TrediaVertical 
 		views->addWidget(button);
 		viewButtons[i] = button;
 	}
-	addWidget(viewBox);
+	viewAction = addWidget(viewBox);
 
 	verticalSwitch = new QCheckBox(QStringLiteral("العمودي"));
 	verticalSwitch->setObjectName("trediaSwitch");
@@ -146,6 +150,13 @@ TrediaTopBar::TrediaTopBar(QMainWindow *main, TrediaDock *dock_, TrediaVertical 
 	addWidget(status);
 	addWidget(spacer());
 
+	montageButton = iconButton("trediaMontageButton", QStringLiteral("المونتاج: منتج تسجيلاتك بنصوص وصور وموسيقى وأي مقاس"));
+	connect(montageButton, &QToolButton::clicked, this, [this]() {
+		if (montage)
+			montage->open();
+	});
+	addWidget(montageButton);
+
 	themeButton = iconButton("trediaThemeButton", QStringLiteral("الوضع الفاتح أو الداكن"));
 	connect(themeButton, &QToolButton::clicked, this, [this]() { triggerMainAction("trediaThemeToggle"); });
 	addWidget(themeButton);
@@ -158,6 +169,18 @@ TrediaTopBar::TrediaTopBar(QMainWindow *main, TrediaDock *dock_, TrediaVertical 
 	settingsButton = iconButton("trediaSettingsButton", QStringLiteral("الإعدادات"));
 	connect(settingsButton, &QToolButton::clicked, this, [this]() { triggerMainAction("action_Settings"); });
 	addWidget(settingsButton);
+
+	editRecording = new QPushButton(QStringLiteral("منتج التسجيل"));
+	editRecording->setObjectName("trediaEditRecording");
+	editRecording->setToolTip(QStringLiteral("افتح التسجيل اللي خلص في المونتاج"));
+	editRecording->setCursor(Qt::PointingHandCursor);
+	connect(editRecording, &QPushButton::clicked, this, [this]() {
+		if (montage)
+			montage->open(lastRecording);
+		editRecordingAction->setVisible(false);
+	});
+	editRecordingAction = addWidget(editRecording);
+	editRecordingAction->setVisible(false);
 
 	recordButton = new QPushButton;
 	recordButton->setObjectName("trediaRecord");
@@ -201,7 +224,7 @@ void TrediaTopBar::refreshVertical()
 		QSignalBlocker block(verticalSwitch);
 		verticalSwitch->setChecked(on);
 	}
-	viewBox->setVisible(on);
+	viewAction->setVisible(on);
 	const QString mode = vertical ? vertical->view() : QStringLiteral("both");
 	const char *const modes[3] = {"h", "both", "v"};
 	for (int i = 0; i < 3; i++)
@@ -276,10 +299,16 @@ void TrediaTopBar::handleEvent(enum obs_frontend_event event)
 		break;
 	case OBS_FRONTEND_EVENT_RECORDING_STARTED:
 		recordSince.start();
+		editRecordingAction->setVisible(false);
 		break;
-	case OBS_FRONTEND_EVENT_RECORDING_STOPPED:
+	case OBS_FRONTEND_EVENT_RECORDING_STOPPED: {
 		recordSince.invalidate();
+		char *file = obs_frontend_get_last_recording();
+		lastRecording = QString::fromUtf8(file);
+		bfree(file);
+		editRecordingAction->setVisible(!lastRecording.isEmpty() && !montage.isNull());
 		break;
+	}
 	default:
 		break;
 	}
