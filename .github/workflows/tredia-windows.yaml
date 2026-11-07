@@ -67,7 +67,8 @@ jobs:
           $License = Get-ChildItem -Path $Out -Recurse -Filter LICENSE | Select-Object -First 1
           if (-not $Exe) { throw "ffmpeg.exe not in the archive" }
           $Bin = Join-Path "${{ github.workspace }}" "build_x64/install/bin/64bit"
-          if (-not (Test-Path (Join-Path $Bin "obs64.exe"))) { throw "obs64.exe not found in $Bin" }
+          # Next to the program itself (tredia-studio.exe): the plugin looks for it there.
+          if (-not (Test-Path (Join-Path $Bin "tredia-studio.exe"))) { throw "tredia-studio.exe not found in $Bin" }
           Copy-Item $Exe.FullName (Join-Path $Bin "tredia-ffmpeg.exe")
           if ($License) { Copy-Item $License.FullName (Join-Path $Bin "tredia-ffmpeg-LICENSE.txt") }
           & (Join-Path $Bin "tredia-ffmpeg.exe") -hide_banner -version | Select-Object -First 1

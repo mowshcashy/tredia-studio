@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.28...3.30)
 
 # Tredia Studio's built-in Tredia features: sign-in, Turbo (Tredia relays the stream to every platform),
 # streaming to several places from this PC, the overlays, the stream report, uploading recordings and
-# the montage editor (rendered by tredia-ffmpeg.exe, which the Windows package adds next to obs64.exe).
+# the montage editor (rendered by tredia-ffmpeg.exe, which the Windows package adds next to tredia-studio.exe).
 
 find_package(Qt6 REQUIRED Widgets Network)
 
