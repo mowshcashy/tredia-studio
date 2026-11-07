@@ -70,11 +70,6 @@ add_core_module(
     PLATFORMS WINDOWS MACOS LINUX
     WITH_MESSAGE
 )
-add_core_module(
-    tredia-studio
-    PLATFORMS WINDOWS
-    WITH_MESSAGE
-)
 add_core_module(image-source)
 add_core_module(linux-alsa PLATFORMS LINUX FREEBSD OPENBSD)
 add_core_module(linux-capture PLATFORMS LINUX FREEBSD OPENBSD)
@@ -121,5 +116,13 @@ add_core_module(vlc-video WITH_MESSAGE)
 add_core_module(win-capture PLATFORMS WINDOWS)
 add_core_module(win-dshow PLATFORMS WINDOWS)
 add_core_module(win-wasapi PLATFORMS WINDOWS)
+
+# Tredia Studio's plugin comes last: its montage window uses obs-browser's panel interface
+# (OBS::browser-panels), which only exists once obs-browser above has been added.
+add_core_module(
+    tredia-studio
+    PLATFORMS WINDOWS
+    WITH_MESSAGE
+)
 
 set_obs_core_modules()

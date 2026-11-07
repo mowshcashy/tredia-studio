@@ -38,9 +38,13 @@ target_link_libraries(
   PRIVATE OBS::frontend-api OBS::libobs Qt::Widgets Qt::Network $<$<PLATFORM_ID:Windows>:crypt32>
 )
 
-# The montage editor shows in OBS's built-in browser (CEF): its panel interface, when it's built.
+# The montage editor shows in OBS's built-in browser (CEF), through obs-browser's panel interface.
+# plugins/CMakeLists.txt adds this plugin after obs-browser so the target exists here; without it
+# the montage window could only say the browser is missing, so the build stops instead.
 if(TARGET OBS::browser-panels)
   target_link_libraries(tredia-studio PRIVATE OBS::browser-panels)
+else()
+  message(FATAL_ERROR "Tredia Studio needs obs-browser's panel interface (OBS::browser-panels) for the montage editor.")
 endif()
 
 set_target_properties_obs(tredia-studio PROPERTIES FOLDER plugins PREFIX "" AUTOMOC ON AUTOUIC OFF AUTORCC OFF)
