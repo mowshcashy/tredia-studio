@@ -39,6 +39,9 @@ public:
 	 * ticked on Tredia, fetched fresh so nothing has to be typed in here. */
 	void goLive();
 
+	/* The Tredia account this dock signs in with (the montage editor's assistant asks Tredia with it). */
+	TrediaApi *client() const { return api; }
+
 signals:
 	void goLiveBusy(bool busy);
 

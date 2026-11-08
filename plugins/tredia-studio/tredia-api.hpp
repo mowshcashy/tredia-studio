@@ -28,7 +28,8 @@ public:
 	void signOut();
 
 	void get(const QString &path, Done done);
-	void post(const QString &path, const QJsonObject &body, Done done);
+	/* timeoutMs: how long the answer may take (the montage assistant's AI takes longer than the rest). */
+	void post(const QString &path, const QJsonObject &body, Done done, int timeoutMs = 30000);
 
 	/* Sends a recording in 8 MB pieces, then turns it into a draft post. done(postUrl, error). */
 	void uploadRecording(const QString &filePath, const QString &title, std::function<void(qint64, qint64)> progress,

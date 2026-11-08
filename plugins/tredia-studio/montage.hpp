@@ -21,6 +21,7 @@ class QProcess;
 class QVBoxLayout;
 class QCefWidget;
 struct QCef;
+class TrediaApi;
 class TrediaBridgeConnection;
 class TrediaMontageWindow;
 
@@ -31,7 +32,8 @@ class TrediaMontageWindow;
  * serves the editor page itself (fetched from tredia.cloud, so the editor updates with the site) and,
  * beside it under /bridge/, what the page needs from the PC: the recordings folder, the file picker,
  * projects saved as files, and the export, rendered with ffmpeg here (tredia-ffmpeg.exe ships with
- * the program). Nothing is uploaded. The page builds the export plan; the program runs it only after
+ * the program). No file is uploaded (the editor's assistant sends Tredia the project's outline only,
+ * with this program's sign-in). The page builds the export plan; the program runs it only after
  * checking it uses known files and nothing but cutting, framing and mixing filters. */
 class TrediaMontage : public QObject {
 	Q_OBJECT
@@ -46,6 +48,8 @@ public:
 	void shutdown();
 	bool exporting() const;
 	void cancelExports();
+	/* The signed-in Tredia account, for the editor's assistant (the page itself has no sign-in). */
+	void setApi(TrediaApi *client);
 
 	struct Request {
 		QByteArray method;
@@ -100,6 +104,7 @@ private:
 	QHash<QString, QString> remuxed; /* media id → MP4 copy for the player (MKV, FLV, TS recordings) */
 	QStringList remuxing;
 	int ffmpegMajor = 0;
+	QPointer<TrediaApi> api;
 
 	bool listen();
 	QString pageUrl() const;
@@ -131,6 +136,7 @@ private:
 	void jobState(TrediaBridgeConnection *c, const QString &id);
 	void cancel(TrediaBridgeConnection *c, const QString &id);
 	void reveal(TrediaBridgeConnection *c, const QString &id);
+	void assistant(TrediaBridgeConnection *c, const QByteArray &body);
 
 	friend class TrediaMontageWindow;
 };

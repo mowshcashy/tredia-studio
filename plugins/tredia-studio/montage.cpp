@@ -1,4 +1,5 @@
 #include "montage.hpp"
+#include "tredia-api.hpp"
 
 #include <obs-frontend-api.h>
 #include <obs-module.h>
@@ -836,6 +837,8 @@ void TrediaMontage::handle(TrediaBridgeConnection *c, const Request &r)
 		cancel(c, arg);
 	else if (what == QStringLiteral("reveal") && post)
 		reveal(c, arg);
+	else if (what == QStringLiteral("ai") && post)
+		assistant(c, r.body);
 	else
 		c->error(404, message("غير موجود."));
 }
@@ -917,7 +920,8 @@ void TrediaMontage::state(TrediaBridgeConnection *c)
 					continue; /* not a video after all */
 				recs.append(mediaJson(id));
 			}
-			QJsonObject o{{"version", 1}, {"folder", recordingFolder()}, {"recordings", recs}, {"projects", projects()}};
+			/* version 2: /bridge/ai (the editor's assistant) */
+			QJsonObject o{{"version", 2}, {"folder", recordingFolder()}, {"recordings", recs}, {"projects", projects()}};
 			o.insert("open", pendingOpen.isEmpty() ? QJsonValue() : QJsonValue(pendingOpen));
 			pendingOpen.clear();
 			conn->json(200, o);
@@ -1281,4 +1285,42 @@ void TrediaMontage::reveal(TrediaBridgeConnection *c, const QString &id)
 	(void)QProcess::startDetached(QStringLiteral("explorer.exe"), {QStringLiteral("/select,"), QDir::toNativeSeparators(j->output)});
 #endif
 	c->json(200, QJsonObject{{"ok", true}});
+}
+
+void TrediaMontage::setApi(TrediaApi *client)
+{
+	api = client;
+}
+
+/* The editor's assistant: the page sends the project's outline (names, times; never a file), and it goes
+ * to Tredia with this program's sign-in, which the page doesn't have. Tredia's answer comes back as it is. */
+void TrediaMontage::assistant(TrediaBridgeConnection *c, const QByteArray &body)
+{
+	if (api.isNull() || !api->signedIn()) {
+		c->error(401, message("سجّل دخولك في تريديا ستوديو من لوحة تريديا عشان يشتغل مساعد المونتاج."));
+		return;
+	}
+	if (body.size() > 4 * 1024 * 1024) {
+		c->error(413, message("المشروع كبير على المساعد."));
+		return;
+	}
+	QJsonParseError err{};
+	const QJsonDocument doc = QJsonDocument::fromJson(body, &err);
+	if (err.error != QJsonParseError::NoError || !doc.isObject()) {
+		c->error(400, message("طلب غير مفهوم."));
+		return;
+	}
+	QPointer<TrediaBridgeConnection> conn(c);
+	api->post(
+		QStringLiteral("/api/app/montage/ai"), doc.object(),
+		[conn](const QJsonObject &data, int status, const QString &error) {
+			if (!conn || !conn->alive())
+				return;
+			if (!error.isEmpty()) {
+				conn->error(status >= 400 ? status : 502, error);
+				return;
+			}
+			conn->json(200, data);
+		},
+		90000);
 }

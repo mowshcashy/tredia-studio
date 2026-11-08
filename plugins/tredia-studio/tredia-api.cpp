@@ -82,9 +82,11 @@ void TrediaApi::get(const QString &path, Done done)
 	handle(net.get(request(path)), std::move(done));
 }
 
-void TrediaApi::post(const QString &path, const QJsonObject &body, Done done)
+void TrediaApi::post(const QString &path, const QJsonObject &body, Done done, int timeoutMs)
 {
-	handle(net.post(request(path), QJsonDocument(body).toJson(QJsonDocument::Compact)), std::move(done));
+	QNetworkRequest req = request(path);
+	req.setTransferTimeout(timeoutMs);
+	handle(net.post(req, QJsonDocument(body).toJson(QJsonDocument::Compact)), std::move(done));
 }
 
 /* ---- Device sign-in ------------------------------------------------------------------------- */

@@ -43,7 +43,7 @@
 #include <QUuid>
 #include <QVBoxLayout>
 
-#define TREDIA_STUDIO_VERSION "1.0.0"
+#define TREDIA_STUDIO_VERSION "1.0.1"
 
 namespace {
 

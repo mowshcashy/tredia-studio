@@ -96,6 +96,7 @@ bool obs_module_load(void)
 	/* The top bar: logo, menu, the vertical picture, live status, go live and record (it replaces
 	 * OBS's controls dock). */
 	montage = new TrediaMontage(main);
+	montage->setApi(dock->client());
 	topBar = new TrediaTopBar(main, dock, vertical, montage);
 	main->addToolBar(Qt::TopToolBarArea, topBar);
 
