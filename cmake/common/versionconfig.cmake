@@ -6,9 +6,11 @@ set(_obs_version ${_obs_default_version})
 set(_obs_version_canonical ${_obs_default_version})
 
 # Attempt to automatically discover expected OBS version
+# Tredia Studio: only OBS's own numeric tags (33.0.1…) count; the fork's release tags (tredia-v1.0.0) are not
+# OBS versions and would make the version invalid.
 if(NOT DEFINED OBS_VERSION_OVERRIDE AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/.git")
   execute_process(
-    COMMAND git describe --always --tags --dirty=-modified
+    COMMAND git describe --always --tags --match "[0-9]*" --dirty=-modified
     OUTPUT_VARIABLE _obs_version
     ERROR_VARIABLE _git_describe_err
     WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
