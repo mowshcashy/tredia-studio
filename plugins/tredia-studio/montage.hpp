@@ -137,6 +137,7 @@ private:
 	void cancel(TrediaBridgeConnection *c, const QString &id);
 	void reveal(TrediaBridgeConnection *c, const QString &id);
 	void assistant(TrediaBridgeConnection *c, const QByteArray &body);
+	void hear(TrediaBridgeConnection *c, const QByteArray &body);
 
 	friend class TrediaMontageWindow;
 };

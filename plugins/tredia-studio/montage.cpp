@@ -839,6 +839,8 @@ void TrediaMontage::handle(TrediaBridgeConnection *c, const Request &r)
 		reveal(c, arg);
 	else if (what == QStringLiteral("ai") && post)
 		assistant(c, r.body);
+	else if (what == QStringLiteral("hear") && post)
+		hear(c, r.body);
 	else
 		c->error(404, message("غير موجود."));
 }
@@ -920,8 +922,8 @@ void TrediaMontage::state(TrediaBridgeConnection *c)
 					continue; /* not a video after all */
 				recs.append(mediaJson(id));
 			}
-			/* version 2: /bridge/ai (the editor's assistant) */
-			QJsonObject o{{"version", 2}, {"folder", recordingFolder()}, {"recordings", recs}, {"projects", projects()}};
+			/* version 2: /bridge/ai (the editor's assistant); 3: /bridge/hear (its ears) */
+			QJsonObject o{{"version", 3}, {"folder", recordingFolder()}, {"recordings", recs}, {"projects", projects()}};
 			o.insert("open", pendingOpen.isEmpty() ? QJsonValue() : QJsonValue(pendingOpen));
 			pendingOpen.clear();
 			conn->json(200, o);
@@ -1292,15 +1294,16 @@ void TrediaMontage::setApi(TrediaApi *client)
 	api = client;
 }
 
-/* The editor's assistant: the page sends the project's outline (names, times; never a file), and it goes
- * to Tredia with this program's sign-in, which the page doesn't have. Tredia's answer comes back as it is. */
+/* The editor's assistant: the page sends the project's outline (names, times; never a video file), a few
+ * frames it drew and the spoken part of the sound (see hear()), and it all goes to Tredia with this program's
+ * sign-in, which the page doesn't have. Tredia's answer comes back as it is. */
 void TrediaMontage::assistant(TrediaBridgeConnection *c, const QByteArray &body)
 {
 	if (api.isNull() || !api->signedIn()) {
 		c->error(401, message("سجّل دخولك في تريديا ستوديو من لوحة تريديا عشان يشتغل مساعد المونتاج."));
 		return;
 	}
-	if (body.size() > 4 * 1024 * 1024) {
+	if (body.size() > 12 * 1024 * 1024) {
 		c->error(413, message("المشروع كبير على المساعد."));
 		return;
 	}
@@ -1322,5 +1325,126 @@ void TrediaMontage::assistant(TrediaBridgeConnection *c, const QByteArray &body)
 			}
 			conn->json(200, data);
 		},
-		90000);
+		150000);
+}
+
+/* The assistant's ears on this PC: ffmpeg measures [from, to] of a known file (the quiet parts, the loudness
+ * every half second) and makes a small Opus copy of the sound, which the page sends to Tredia to write down
+ * what's said (only for up to 25 minutes, and only when the person asks the assistant). */
+void TrediaMontage::hear(TrediaBridgeConnection *c, const QByteArray &body)
+{
+	const QJsonObject in = QJsonDocument::fromJson(body).object();
+	const QString file = registry.value(in.value(QStringLiteral("media")).toString());
+	const double from = qMax(0.0, in.value(QStringLiteral("from")).toDouble());
+	const double to = in.value(QStringLiteral("to")).toDouble();
+	/* 400, not 404: the page reads a 404 as "this Tredia Studio is too old for hearing". */
+	if (file.isEmpty() || !QFileInfo(file).isFile()) {
+		c->error(400, message("الملف غير موجود."));
+		return;
+	}
+	if (!(to > from)) {
+		c->error(400, message("الجزء المطلوب غير صحيح."));
+		return;
+	}
+	const double seconds = qMin(to - from, 3.0 * 3600);
+	const bool keepAudio = seconds <= 25 * 60;
+	QByteArray rnd(8, Qt::Uninitialized);
+	for (char &ch : rnd)
+		ch = static_cast<char>(QRandomGenerator::system()->bounded(256));
+	const QString work = dir("montage/cache") + QStringLiteral("/hear-") + QString::fromLatin1(rnd.toHex());
+	QDir().mkpath(work);
+	/* The metadata file stays relative (ffmpeg runs in `work`): a drive colon would break the filter. */
+	const QString graph = QStringLiteral("[0:a:0]aformat=channel_layouts=mono,aresample=16000,asplit=2[x][out];"
+					     "[x]silencedetect=noise=-35dB:d=0.5,asetnsamples=n=8000:p=0,astats=metadata=1:reset=1,"
+					     "ametadata=mode=print:key=lavfi.astats.Overall.RMS_level:file=loud.txt,anullsink");
+	QStringList args = {QStringLiteral("-hide_banner"), QStringLiteral("-nostdin"), QStringLiteral("-nostats"), QStringLiteral("-y"),
+			    QStringLiteral("-ss"), QString::number(from, 'f', 3), QStringLiteral("-t"), QString::number(seconds, 'f', 3),
+			    QStringLiteral("-i"), file, QStringLiteral("-vn"), QStringLiteral("-filter_complex"), graph,
+			    QStringLiteral("-map"), QStringLiteral("[out]")};
+	if (keepAudio)
+		args << QStringLiteral("-c:a") << QStringLiteral("libopus") << QStringLiteral("-b:a") << QStringLiteral("16k") << QStringLiteral("-f")
+		     << QStringLiteral("ogg") << QStringLiteral("audio.ogg");
+	else
+		args << QStringLiteral("-f") << QStringLiteral("null") << QStringLiteral("-");
+
+	auto *proc = new QProcess(this);
+	proc->setWorkingDirectory(work);
+	QPointer<TrediaBridgeConnection> conn(c);
+	connect(proc, &QProcess::started, this, [proc]() {
+#ifdef _WIN32
+		/* Below normal: a game or a stream on this PC keeps the CPU first. */
+		if (HANDLE h = OpenProcess(PROCESS_SET_INFORMATION, FALSE, static_cast<DWORD>(proc->processId()))) {
+			SetPriorityClass(h, BELOW_NORMAL_PRIORITY_CLASS);
+			CloseHandle(h);
+		}
+#else
+		(void)proc;
+#endif
+	});
+	connect(proc, &QProcess::finished, this, [proc, conn, work, from, seconds](int code, QProcess::ExitStatus) {
+		const QString log = QString::fromUtf8(proc->readAllStandardError());
+		proc->deleteLater();
+		QJsonArray silences;
+		QJsonArray loudness;
+		QString audio;
+		if (code == 0) {
+			static const QRegularExpression startRe(QStringLiteral("silence_start:\\s*(-?[0-9.]+)"));
+			static const QRegularExpression endRe(QStringLiteral("silence_end:\\s*(-?[0-9.]+)"));
+			double open = -1;
+			for (const QString &line : log.split(QLatin1Char('\n'))) {
+				const QRegularExpressionMatch s = startRe.match(line);
+				if (s.hasMatch())
+					open = qMax(0.0, s.captured(1).toDouble());
+				const QRegularExpressionMatch e = endRe.match(line);
+				if (e.hasMatch() && open >= 0) {
+					silences.append(QJsonArray{from + open, from + e.captured(1).toDouble()});
+					open = -1;
+				}
+			}
+			if (open >= 0)
+				silences.append(QJsonArray{from + open, from + seconds});
+			QFile loud(work + QStringLiteral("/loud.txt"));
+			if (loud.open(QIODevice::ReadOnly)) {
+				static const QRegularExpression ptsRe(QStringLiteral("pts_time:([0-9.]+)"));
+				static const QRegularExpression rmsRe(QStringLiteral("RMS_level=(-?[0-9.]+|-inf)"));
+				double t = -1;
+				for (const QByteArray &raw : loud.readAll().split('\n')) {
+					const QString line = QString::fromUtf8(raw);
+					const QRegularExpressionMatch p = ptsRe.match(line);
+					if (p.hasMatch())
+						t = p.captured(1).toDouble();
+					const QRegularExpressionMatch r = rmsRe.match(line);
+					if (r.hasMatch() && t >= 0) {
+						const double db = r.captured(1) == QStringLiteral("-inf") ? -120.0 : r.captured(1).toDouble();
+						loudness.append(QJsonArray{from + t, db});
+						t = -1;
+					}
+				}
+			}
+			QFile sound(work + QStringLiteral("/audio.ogg"));
+			if (sound.open(QIODevice::ReadOnly))
+				audio = QString::fromLatin1(sound.readAll().toBase64());
+		}
+		QDir(work).removeRecursively();
+		if (!conn || !conn->alive())
+			return;
+		/* A video without sound has nothing to hear: an empty answer, not an error. */
+		const bool silent = log.contains(QStringLiteral("matches no streams")) || log.contains(QStringLiteral("does not contain any stream"));
+		if (code != 0 && !silent) {
+			conn->error(502, message("ما قدرنا نسمع الملف."));
+			return;
+		}
+		QJsonObject o{{"silences", silences}, {"loudness", loudness}, {"seconds", seconds}};
+		o.insert(QStringLiteral("audio"), audio.isEmpty() ? QJsonValue() : QJsonValue(audio));
+		conn->json(200, o);
+	});
+	connect(proc, &QProcess::errorOccurred, this, [proc, conn, work](QProcess::ProcessError e) {
+		if (e != QProcess::FailedToStart)
+			return;
+		proc->deleteLater();
+		QDir(work).removeRecursively();
+		if (conn && conn->alive())
+			conn->error(502, message("ما لقينا ffmpeg مع تريديا ستوديو. أعد تثبيت البرنامج."));
+	});
+	proc->start(ffmpeg(), args);
 }
